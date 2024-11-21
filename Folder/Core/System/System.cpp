@@ -116,18 +116,26 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
     std::vector<int> PointCount (xLength * zLength, 0);
 
     Temp.resize(xLength * zLength);
-    int count;
-    
+
+    int index = 0;
+    for(int z = 0; z < zLength; z++)
+    {
+        for(int x = 0; x < xLength; x++)
+        {
+            Temp[index].Position.x = x;
+            Temp[index].Position.y = 0;
+            Temp[index].Position.z = z;
+            index++;
+        }
+    }
     for (Vertex point: points)
     {
         int xPos = static_cast<int>(point.Position.x * 100.f) >> 6;
         int zPos = static_cast<int>(point.Position.z * 100.f) >> 6;
-        int index = (zPos * xLength) + xPos;
+        index = (zPos * xLength) + xPos;
         
         PointCount[index]++;
-        Temp[index].Position.x = xPos * 0.01f;
-        Temp[index].Position.y += point.Position.y * 0.1f;
-        Temp[index].Position.z = zPos * 0.01f;
+        Temp[index].Position.y += point.Position.y;
         Temp[index].Color += point.Color;
     }
     for (int i = 0; i < Temp.size(); i++)
@@ -139,12 +147,21 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         }
         else
         {
-            Temp[i].Position = glm::vec3(Temp[i-1].Position.x + (1 << 6), 0, (i / xLength) << 6);
+            Temp[i].Position = glm::vec3(Temp[i-1].Position.x + 1, 0, i / xLength);
             Temp[i].Position.y = Temp[i-1].Position.y;
             Temp[i].Color = Temp[i-1].Color;
         }
     }
-
+    index = 0;
+    for(int z = 0; z < zLength; z++)
+    {
+        for(int x = 0; x < xLength; x++)
+        {
+            Temp[index].Position.x = static_cast<int>(Temp[index].Position.x * 0.01f) << 6;
+            Temp[index].Position.z = static_cast<int>(Temp[index].Position.z * 0.01f) << 6;
+            index++;
+        }
+    }
     for (int i = 0; i < Temp.size(); i++)
     {
         if ((i + 1) % xLength == 0)
@@ -155,7 +172,7 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         {
             continue;
         }
-        Indices.emplace_back(i, i + xLength, i + xLength +1);
+        Indices.emplace_back(i, i + xLength, i + xLength + 1);
         Indices.emplace_back(i, i + xLength + 1, i + 1);
     }
     componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Vertices = Temp;
@@ -169,7 +186,8 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
     std::ifstream file(filename);
     std::string line;
 
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         std::cout << "Failed to open file: " << filename << std::endl;
         return;
     }
@@ -181,10 +199,10 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
     while (std::getline(file, line))
     {
         if (skipLine)
-            {
+        {
             skipLine = !skipLine;
             continue;       
-            }
+        }
      
             //Position and Color
             float x, y, z, r, g, b;
@@ -194,7 +212,7 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
         
             //Supports both space and tab seperated values
             if (sscanf_s(line.c_str(), "%f %f %f %f %f %f %f %f %f %f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10 || sscanf_s(line.c_str(), "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10)
-                {
+            {
                 float xf = x;
                 float yf = z;
                 float zf = y;
@@ -209,13 +227,14 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
 
                 points.push_back(point);
                 skipLine = !skipLine;
-                }
+            }
     }
     maxPoint -= minPoint;
     file.close();
 
     // Translate points to move the minimum point to the origin
-    for (auto &point : points) {
+    for (auto &point : points)
+    {
         point.Position -= minPoint;
     }
     SortPoints(points, minPoint,maxPoint,entity);
