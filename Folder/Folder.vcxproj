@@ -110,6 +110,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(SolutionDir)\Folder\Dependencies\includes</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,7 +158,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Core\Components\Component.cpp" />
+    <ClCompile Include="Core\Engine.cpp" />
+    <ClCompile Include="Core\Entity\Entity.cpp" />
+    <ClCompile Include="Core\Shader\Shader.cpp" />
+    <ClCompile Include="Core\System\System.cpp" />
+    <ClCompile Include="Core\Window\Camera\Camera.cpp" />
+    <ClCompile Include="Core\Window\Input\Input.cpp" />
+    <ClCompile Include="Core\Window\Window.cpp" />
     <ClCompile Include="Folder.cpp" />
+    <ClCompile Include="glad.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Color.h" />
+    <ClInclude Include="Core\Components\Component.h" />
+    <ClInclude Include="Core\Engine.h" />
+    <ClInclude Include="Core\Entity\Entity.h" />
+    <ClInclude Include="Core\Shader\Shader.h" />
+    <ClInclude Include="Core\System\System.h" />
+    <ClInclude Include="Core\Window\Camera\Camera.h" />
+    <ClInclude Include="Core\Window\Input\Input.h" />
+    <ClInclude Include="Core\Window\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Core\Shader\FragmentShader.shader" />
+    <Content Include="Core\Shader\VertexShader.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
