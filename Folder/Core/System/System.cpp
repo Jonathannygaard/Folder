@@ -108,8 +108,9 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
 {
     std::vector<Vertex> Temp;
     std::vector<Triangles> Indices;
-    int maxX = static_cast<int>(max.x * 100.f) >> 6;
-    int maxZ = static_cast<int>(max.z * 100.f) >> 6;
+    int quality = 6;
+    int maxX = static_cast<int>(max.x * 100.f) >> quality;
+    int maxZ = static_cast<int>(max.z * 100.f) >> quality;
     int xLength = maxX + 1;
     int zLength = maxZ + 1;
     
@@ -118,20 +119,22 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
     Temp.resize(xLength * zLength);
 
     int index = 0;
-    for(int z = 0; z < zLength; z++)
+    for(int x = 0; x < xLength; x++)
     {
-        for(int x = 0; x < xLength; x++)
+        for(int z = 0; z < zLength; z++)
         {
-            Temp[index].Position.x = x;
+            index = (z * xLength) + x;
+            Temp[index].Position.x = (x << quality);
+            Temp[index].Position.x *= 0.01f;
             Temp[index].Position.y = 0;
-            Temp[index].Position.z = z;
-            index++;
+            Temp[index].Position.z = (z << quality);
+            Temp[index].Position.z *= 0.01f;
         }
     }
     for (Vertex point: points)
     {
-        int xPos = static_cast<int>(point.Position.x * 100.f) >> 6;
-        int zPos = static_cast<int>(point.Position.z * 100.f) >> 6;
+        int xPos = static_cast<int>(point.Position.x * 100.f) >> quality;
+        int zPos = static_cast<int>(point.Position.z * 100.f) >> quality;
         index = (zPos * xLength) + xPos;
         
         PointCount[index]++;
@@ -147,19 +150,13 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         }
         else
         {
-            Temp[i].Position = glm::vec3(Temp[i-1].Position.x + 1, 0, i / xLength);
+            if (i-1 < 0)
+            {
+                Temp[i].Position.y = 0;
+                continue;
+            }
             Temp[i].Position.y = Temp[i-1].Position.y;
             Temp[i].Color = Temp[i-1].Color;
-        }
-    }
-    index = 0;
-    for(int z = 0; z < zLength; z++)
-    {
-        for(int x = 0; x < xLength; x++)
-        {
-            Temp[index].Position.x = static_cast<int>(Temp[index].Position.x * 0.01f) << 6;
-            Temp[index].Position.z = static_cast<int>(Temp[index].Position.z * 0.01f) << 6;
-            index++;
         }
     }
     for (int i = 0; i < Temp.size(); i++)
