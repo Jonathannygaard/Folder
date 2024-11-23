@@ -129,7 +129,6 @@ void Engine::update()
                    glm::vec3(rand()%18-9, rand()%10-5, -10.f);
        }
    }
-    movementSystem.MoveEntity(&entities[0]);
     Draw();
     MainCamera.OrbitCamera();
 }

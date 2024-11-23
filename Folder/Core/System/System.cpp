@@ -35,7 +35,7 @@ void MeshSystem::DrawMesh(Entity* entity)
     
     if(componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Indices.empty())
     {
-        glDrawArrays(GL_TRIANGLES, 0, mesh.Vertices.size());
+        glDrawArrays(GL_POINTS, 0, mesh.Vertices.size());
         glBindVertexArray(0);
     }
     else
@@ -108,9 +108,9 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
 {
     std::vector<Vertex> Temp;
     std::vector<Triangles> Indices;
-    int quality = 6;
-    int maxX = static_cast<int>(max.x * 100.f) >> quality;
-    int maxZ = static_cast<int>(max.z * 100.f) >> quality;
+    int resolution = 5;
+    int maxX = static_cast<int>(max.x * 100.f) >> resolution;
+    int maxZ = static_cast<int>(max.z * 100.f) >> resolution;
     int xLength = maxX + 1;
     int zLength = maxZ + 1;
     
@@ -124,17 +124,18 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         for(int z = 0; z < zLength; z++)
         {
             index = (z * xLength) + x;
-            Temp[index].Position.x = (x << quality);
+            Temp[index].Position.x = (x << resolution);
             Temp[index].Position.x *= 0.01f;
             Temp[index].Position.y = 0;
-            Temp[index].Position.z = (z << quality);
+            Temp[index].Position.z = (z << resolution);
             Temp[index].Position.z *= 0.01f;
+            Temp[index].Color = glm::vec3(0);
         }
     }
     for (Vertex point: points)
     {
-        int xPos = static_cast<int>(point.Position.x * 100.f) >> quality;
-        int zPos = static_cast<int>(point.Position.z * 100.f) >> quality;
+        int xPos = static_cast<int>(point.Position.x * 100.f) >> resolution;
+        int zPos = static_cast<int>(point.Position.z * 100.f) >> resolution;
         index = (zPos * xLength) + xPos;
         
         PointCount[index]++;
@@ -150,13 +151,39 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         }
         else
         {
-            if (i-1 < 0)
+            Temp[i].Color = glm::vec3(0);
+            if (i-1 >= 0 && i % xLength != 0)
             {
-                Temp[i].Position.y = 0;
-                continue;
+                Temp[i].Position.y += Temp[i-1].Position.y;
+                Temp[i].Color += Temp[i - 1].Color;  
+                PointCount[i]++;
             }
-            Temp[i].Position.y = Temp[i-1].Position.y;
-            Temp[i].Color = Temp[i-1].Color;
+            if (i + 1 < Temp.size() && (i + 1) % xLength != 0)
+            {
+                if (PointCount[i+1]>0)
+                {
+                    Temp[i].Position.y += Temp[i + 1].Position.y/PointCount[i + 1];
+                    Temp[i].Color += Temp[i + 1].Color/glm::vec3(PointCount[i + 1]);
+                    PointCount[i]++;
+                }
+            }
+            if (i + xLength < Temp.size())
+            {
+                if (PointCount[i + xLength] > 0)
+                {
+                    Temp[i].Position.y += Temp[i + xLength].Position.y/PointCount[i + xLength];
+                    Temp[i].Color += Temp[i + xLength].Color/glm::vec3(PointCount[i + xLength]);
+                    PointCount[i]++;
+                }
+            }
+            if (i - xLength >= 0)
+            {
+                Temp[i].Position.y += Temp[i - xLength].Position.y;
+                Temp[i].Color += Temp[i - xLength].Color;
+                PointCount[i]++;
+            }
+            Temp[i].Position.y /= PointCount[i];
+            Temp[i].Color /= PointCount[i];
         }
     }
     for (int i = 0; i < Temp.size(); i++)

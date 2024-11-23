@@ -12,7 +12,7 @@ public:
     glm::vec3 PlayerPos = glm::vec3(0.375f, 1.15f, -0.375f);
     glm::vec3 cameraPos = glm::vec3(PlayerPos.x, PlayerPos.y, PlayerPos.z) + cameraFront * -3.f;
     //glm::vec3 cameraPos = glm::vec3(0,0,1);
-    float cameraSpeed = 5.f;
+    float cameraSpeed = 20.f;
 
     int viewLoc;
     int projectionLoc;
