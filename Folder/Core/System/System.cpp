@@ -13,9 +13,7 @@
 void MovementSystem::MoveEntity(Entity* entity)
 {
     static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position +=
-        static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Movement *
-            static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Speed
-    * Engine::DeltaTime;
+        static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Movement * Engine::DeltaTime;
 }
 
 void MovementSystem::FindDirection(Entity* entity, Entity* target)
@@ -23,6 +21,13 @@ void MovementSystem::FindDirection(Entity* entity, Entity* target)
     static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Movement =
         glm::normalize(static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(target).Position -
             static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position);
+}
+
+void MovementSystem::Gravity(Entity* entity)
+{
+    float force = componentmanager.GetComponentHandler<MassComponent>()->GetComponent(entity).Mass * -1.f; 
+    componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement +=
+            glm::vec3(0,force,0);
 }
 
 void MeshSystem::DrawMesh(Entity* entity)
@@ -104,11 +109,10 @@ void MeshSystem::BindBuffers(Entity* entity)
 }
 
 
-void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 max, Entity* entity)
+int MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 max, Entity* entity, int resolution)
 {
     std::vector<Vertex> Temp;
     std::vector<Triangles> Indices;
-    int resolution = 5;
     int maxX = static_cast<int>(max.x * 100.f) >> resolution;
     int maxZ = static_cast<int>(max.z * 100.f) >> resolution;
     int xLength = maxX + 1;
@@ -142,6 +146,7 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         Temp[index].Position.y += point.Position.y;
         Temp[index].Color += point.Color;
     }
+    float minHeight;
     for (int i = 0; i < Temp.size(); i++)
     {
         if (PointCount[i] > 0)
@@ -185,9 +190,14 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
             Temp[i].Position.y /= PointCount[i];
             Temp[i].Color /= PointCount[i];
         }
+        if (i == 0)
+        {
+            minHeight = Temp[i].Position.y;
+        }
     }
     for (int i = 0; i < Temp.size(); i++)
     {
+        Temp[i].Position.y -= minHeight;
         if ((i + 1) % xLength == 0)
         {
             continue;
@@ -199,12 +209,22 @@ void MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3
         Indices.emplace_back(i, i + xLength, i + xLength + 1);
         Indices.emplace_back(i, i + xLength + 1, i + 1);
     }
+    for (auto Triangles: Indices)
+    {
+        glm::vec3 Normal = glm::normalize(glm::cross(Temp[Triangles.a].Position - Temp[Triangles.c].Position,
+            Temp[Triangles.b].Position - Temp[Triangles.c].Position));
+        Temp[Triangles.a].Normal += Normal;
+        Temp[Triangles.b].Normal += Normal;
+        Temp[Triangles.c].Normal += Normal;
+    }
+    
     componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Vertices = Temp;
     componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Indices = Indices;
     BindBuffers(entity);
+    return xLength;
 }
 
-void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
+int MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity, int resolution)
 {
     std::vector<Vertex> points;
     std::ifstream file(filename);
@@ -213,7 +233,7 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
     if (!file.is_open())
     {
         std::cout << "Failed to open file: " << filename << std::endl;
-        return;
+        return 0;
     }
 
     glm::vec3 minPoint(FLT_MAX);
@@ -261,7 +281,7 @@ void MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity)
     {
         point.Position -= minPoint;
     }
-    SortPoints(points, minPoint,maxPoint,entity);
+    return SortPoints(points, minPoint,maxPoint,entity, resolution);
 }
 
 void MeshSystem::CreateCubeMesh(Entity* entity, glm::vec3 color)
@@ -314,9 +334,58 @@ void MeshSystem::CreateCubeMesh(Entity* entity, glm::vec3 color)
     BindBuffers(entity);
 }
 
-void MeshSystem::CreateFloorMesh(Entity* entity)
+int MeshSystem::CreateFloorMesh(Entity* entity, int resolution)
 {
-    LoadPointCloud("map.txt", entity);
+    return LoadPointCloud("map.txt", entity, resolution);
+}
+
+
+void MeshSystem::CreateSphereMesh(Entity* entity, int Sectors, int Stacks, float radius, glm::vec3 color)
+{
+    float x, y, z, xy;
+    float SectorStep = 2 * glm::pi<float>() / Sectors;
+    float StackStep = glm::pi<float>() / Stacks;
+    float SectorAngle, StackAngle;
+
+    for(int i = 0; i <= Stacks; i++)
+    {
+        StackAngle = glm::pi<float>() / 2 - i * StackStep;
+        float xy = radius * cos(StackAngle);
+        float z = radius * sin(StackAngle);
+		
+        for(int j = 0; j <= Sectors; j++)
+        {
+            SectorAngle = j * SectorStep;
+
+            float x = xy * cos(SectorAngle);
+            float y = xy * sin(SectorAngle);
+            glm::vec3 Temp(x,y,z);
+            if(i == 0 && j != 0)
+            {
+                //continue;
+            }
+				
+            componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Vertices.emplace_back(Temp, color);
+        }
+        for(int i = 0; i < Stacks; i++)
+        {
+            int k1 = i * (Sectors + 1);
+            int k2 = k1 + Sectors + 1;
+	
+            for(int j = 0; j < Sectors; j++, k1++, k2++)
+            {
+                if(i != 0)
+                {
+                    componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Indices.emplace_back(k1, k2, k1 + 1);
+                }
+                if(i != (Stacks - 1))
+                {
+                    componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Indices.emplace_back(k1 + 1, k2, k2 + 1);
+                }
+            }
+        }
+        BindBuffers(entity);
+    }
 }
 
 bool CollisionSystem::CheckCollision(Entity* entity1, Entity* entity2)
@@ -351,6 +420,85 @@ void CollisionSystem::UpdatePosition(Entity* entity)
     static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(entity).max =
         static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position
             + glm::vec3 (1.f, 1.f, -1.f);
+}
+
+bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, int resolution, int xLength)
+{
+    glm::vec3 p1, p2, p3, player, temp, terrainPos;
+    
+    player = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
+    MeshComponent& terrainMesh = componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(terrain);
+    
+    int xPos = static_cast<int>(player.x * 100) >> resolution;
+    int zPos = static_cast<int>(player.z * 100) >> resolution;
+
+    int index = (zPos * xLength) + xPos;
+    
+    // Early exit if index is out of bounds
+    if (index < 0 || index + xLength + 1 >= terrainMesh.Vertices.size())
+    {
+        return false;
+    }
+    
+    for(int i = 0; i < 2; i++)
+    {
+        if(i==0)
+        {
+            p1 = terrainMesh.Vertices[index].Position;
+            p2 = terrainMesh.Vertices[index + xLength].Position;
+            p3 = terrainMesh.Vertices[index + xLength + 1].Position;
+        }
+        else
+        {
+            p1 = terrainMesh.Vertices[index].Position;
+            p2 = terrainMesh.Vertices[index + xLength +1].Position;
+            p3 = terrainMesh.Vertices[index + 1].Position;
+        }
+
+        // Calculate barycentric coordinates
+        glm::vec2 v0 = glm::vec2(p2.x - p1.x, p2.z - p1.z);
+        glm::vec2 v1 = glm::vec2(p3.x - p1.x, p3.z - p1.z);
+        glm::vec2 v2 = glm::vec2(player.x - p1.x, player.z - p1.z);
+
+        // Compute dot products
+        float dot00 = glm::dot(v0, v0);
+        float dot01 = glm::dot(v0, v1);
+        float dot02 = glm::dot(v0, v2);
+        float dot11 = glm::dot(v1, v1);
+        float dot12 = glm::dot(v1, v2);
+
+        // Compute barycentric coordinates
+        float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+        float v = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        float w = (dot00 * dot12 - dot01 * dot02) * invDenom;
+        float u = 1.0f - v - w;
+
+        // Check if point is in triangle
+        if (u >= 0.0f && v >= 0.0f && w >= 0.0f)
+        {
+            // Interpolate height
+            float height = u * p1.y + v * p2.y + w * p3.y;
+            if (componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position.y <= height + 0.5f)
+            {
+                glm::vec3 Normal;
+                 if (i == 0)
+                 {
+                     Normal = terrainMesh.Vertices[index].Normal + terrainMesh.Vertices[index + xLength].Position +
+                                     terrainMesh.Vertices[index + xLength + 1].Position;
+                 }
+                 else
+                 {
+                     Normal = terrainMesh.Vertices[index].Normal + terrainMesh.Vertices[index + xLength + 1].Position +
+                                     terrainMesh.Vertices[index + 1].Position;
+                 }
+                componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position.y = height + 0.5f;
+                componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement =
+                         glm::reflect(componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement, Normal) * 0.6f;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void CombatSystem::Attack(Entity* entity1, Entity* entity2)

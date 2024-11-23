@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <vector>
 #include <GLFW/glfw3.h>
 
 class ComponentManager;
@@ -16,7 +17,7 @@ public:
 class KeyBoardInput
 {
 public:
-    static void processInput(GLFWwindow* window, Entity* player, ComponentManager* componentManager);
+    static void processInput(GLFWwindow* window, std::vector<Entity>& entities, ComponentManager* componentManager);
 };
 
 namespace MouseInput

@@ -10,7 +10,7 @@ void Input::framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void KeyBoardInput::processInput(GLFWwindow* window, Entity* player, ComponentManager* componentManager)
+void KeyBoardInput::processInput(GLFWwindow* window, std::vector<Entity>& entities, ComponentManager* componentManager)
 {
     if(glfwGetKey(window,GLFW_KEY_ESCAPE)==GLFW_PRESS)
     {
@@ -18,49 +18,55 @@ void KeyBoardInput::processInput(GLFWwindow* window, Entity* player, ComponentMa
     }
     if(glfwGetKey(window,GLFW_KEY_W)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.x +=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.x +=
             Engine::MainCamera.cameraSpeed * Engine::MainCamera.cameraFront.x * Engine::DeltaTime;
         
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.z +=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.z +=
             Engine::MainCamera.cameraSpeed * Engine::MainCamera.cameraFront.z * Engine::DeltaTime;
         
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window,GLFW_KEY_A)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position -=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position -=
             (Engine::MainCamera.cameraSpeed * glm::normalize(glm::cross(Engine::MainCamera.cameraFront, Engine::MainCamera.cameraUp))) * Engine::DeltaTime;
         
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window,GLFW_KEY_S)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.x -=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.x -=
             Engine::MainCamera.cameraSpeed * Engine::MainCamera.cameraFront.x * Engine::DeltaTime;
         
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.z -=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.z -=
             Engine::MainCamera.cameraSpeed * Engine::MainCamera.cameraFront.z * Engine::DeltaTime;
         
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window,GLFW_KEY_D)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position +=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position +=
             (Engine::MainCamera.cameraSpeed * glm::normalize(glm::cross(Engine::MainCamera.cameraFront, Engine::MainCamera.cameraUp))) * Engine::DeltaTime;
         
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window, GLFW_KEY_E)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.y +=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.y +=
             Engine::MainCamera.cameraSpeed * Engine::DeltaTime;
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window, GLFW_KEY_Q)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position.y -=
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position.y -=
             Engine::MainCamera.cameraSpeed * Engine::DeltaTime;
-        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(player).Position);
+        Engine::MainCamera.setPlayerPos(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
+    }
+    if(glfwGetKey(window, GLFW_KEY_SPACE)==GLFW_PRESS)
+    {
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities.back()).Position =
+                componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
+        componentManager->GetComponentHandler<MovementComponent>()->GetComponent(&entities.back()).Movement = glm::vec3(2,0,0);
     }
 }
 

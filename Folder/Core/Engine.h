@@ -11,6 +11,11 @@ public:
   GLFWwindow *Window;
   static inline Camera MainCamera;
   static inline float DeltaTime;
+    
+  int AmountOfSpheres = 1;
+    
+  int TerrainResolution = 6;
+  int xLength;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;
@@ -24,9 +29,8 @@ public:
   void run();
   void Draw();
 
-  std::vector<Entity> pickups;  
-  std::vector<Entity> enemies;  
-  std::vector<Entity> entities;
+  std::vector<Entity> entities;  
+  std::vector<Entity> spheres;
   
   Engine() : meshSystem(componentManager), movementSystem(componentManager),
                 collisionSystem(componentManager), combatSystem(componentManager) {}

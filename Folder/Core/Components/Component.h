@@ -79,7 +79,6 @@ class MovementComponent : public Component
 {
 public:
     glm::vec3 Movement;
-    float Speed;
 };
 
 class HealthComponent : public Component
@@ -98,6 +97,12 @@ public:
     std::vector<Triangles> Indices;
 
     unsigned int VAO;
+};
+
+class MassComponent: public Component
+{
+public:
+    float Mass;
 };
 
 class CollisionComponent : public Component
