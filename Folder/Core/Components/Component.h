@@ -47,6 +47,11 @@ public:
         }
         throw std::runtime_error("Entity does not have this component");
     }
+
+    bool HasComponent(Entity* entity)
+    {
+        return EntityToIndex.contains(entity->ID);
+    }
 };
 
 class ComponentManager
@@ -73,6 +78,15 @@ class PositionComponent : public Component
 {
 public:
     glm::vec3 Position;
+};
+
+class TrackingComponent : public Component
+{
+public:
+    std::vector<Vertex> SplinePoints;
+    std::vector<Vertex> Points;
+    std::vector<glm::vec3> controlpoints;
+    std::vector<float> knots;
 };
 
 class MovementComponent : public Component

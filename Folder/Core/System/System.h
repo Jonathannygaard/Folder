@@ -35,6 +35,7 @@ public:
     CollisionSystem(ComponentManager& componentManager) : componentmanager(componentManager) {}
     bool CheckCollision(Entity* entity1, Entity* entity2);
     void UpdatePosition(Entity* entity);
+    void ResolveGroundCollision(Entity* entity, float height, glm::vec3 Normal);
     bool BarycentricCoordinates(Entity* terrain, Entity* entity, int resolution, int xLength);
 };
 
@@ -47,4 +48,17 @@ public:
     void TakeDamage(Entity* entity, int damage);
     void DelayTimer(Entity* entity);
 };
+
+class TrackingSystem : public System
+{
+public:
+    ComponentManager& componentmanager;
+    TrackingSystem(ComponentManager& componentmanager): componentmanager(componentmanager){}
+    float BasisFunction(Entity* entity, int i, int k, float t);
+    void GenerateKnots(Entity* entity, int degree);
+    glm::vec3 Evaluate(Entity* entity, float t, int degree);
+    void CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree);
+    void TrackSphere(Entity* entity);
+};
+
 

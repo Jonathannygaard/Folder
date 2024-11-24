@@ -12,16 +12,20 @@ public:
   static inline Camera MainCamera;
   static inline float DeltaTime;
     
-  int AmountOfSpheres = 1;
+  int AmountOfSpheres = 10;
     
   int TerrainResolution = 6;
   int xLength;
+
+  float tracktimer = 0.f;
+  float trackinterval = 0.5f;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;
   MovementSystem movementSystem;
   CollisionSystem collisionSystem;
   CombatSystem combatSystem;
+  TrackingSystem trackingsystem;
 
   void Create();
   void setup();
@@ -33,5 +37,5 @@ public:
   std::vector<Entity> spheres;
   
   Engine() : meshSystem(componentManager), movementSystem(componentManager),
-                collisionSystem(componentManager), combatSystem(componentManager) {}
+                collisionSystem(componentManager), combatSystem(componentManager), trackingsystem(componentManager) {}
 };

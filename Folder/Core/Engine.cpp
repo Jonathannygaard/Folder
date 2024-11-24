@@ -54,10 +54,12 @@ void Engine::Create()
         componentManager.AddComponent<PositionComponent>(&sphere);
         componentManager.AddComponent<MovementComponent>(&sphere);
         componentManager.AddComponent<MassComponent>(&sphere);
+        componentManager.AddComponent<TrackingComponent>(&sphere);
 
         meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
-        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position = glm::vec3(1,10,1);
-        componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 10.f;
+        componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
+        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
+             glm::vec3(rand()%100, rand()%100, rand()%100);
     }    
 }
 
@@ -65,7 +67,7 @@ void Engine::setup()
 {
     Window = Window::init();
     MainCamera.init();
-    glLineWidth(5.f);
+    glLineWidth(10.f);
     Create();
 }
 
@@ -88,10 +90,21 @@ void Engine::update()
             movementSystem.Gravity(&s);
         }
         movementSystem.MoveEntity(&s);
+        
         std::cout << componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.x << "  " <<
             componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.y << "   " <<
                 componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.z << "\n";
     }
+    if (tracktimer > trackinterval)
+    {
+        trackingsystem.TrackSphere(&spheres.back());
+
+        componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.back()).SplinePoints.clear();
+        trackingsystem.CreateBSpline(&spheres.back(), 10, Color::Pink, 3);
+        
+        tracktimer = 0;
+    }
+    tracktimer += DeltaTime;
     
     Draw();
     MainCamera.OrbitCamera();

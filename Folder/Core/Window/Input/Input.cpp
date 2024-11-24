@@ -66,7 +66,12 @@ void KeyBoardInput::processInput(GLFWwindow* window, std::vector<Entity>& entiti
     {
         componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities.back()).Position =
                 componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
-        componentManager->GetComponentHandler<MovementComponent>()->GetComponent(&entities.back()).Movement = glm::vec3(2,0,0);
+        componentManager->GetComponentHandler<MovementComponent>()->GetComponent(&entities.back()).Movement = glm::vec3(glm::normalize(Engine::MainCamera.cameraFront)) * 100.f;
+
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities.back()).SplinePoints.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities.back()).controlpoints.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities.back()).Points.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities.back()).knots.clear();
     }
 }
 

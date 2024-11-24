@@ -1,11 +1,12 @@
 ﻿#include "System.h"
-
 #include <algorithm>
 #include <dinput.h>
 #include <iostream>
 #include <fstream>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <glm/gtc/type_ptr.hpp>
+#include "../Color.h"
 #include "../Components/Component.h"
 #include "../Shader/Shader.h"
 #include "../Engine.h"
@@ -46,6 +47,12 @@ void MeshSystem::DrawMesh(Entity* entity)
     else
     {
         glDrawElements(GL_TRIANGLES, mesh.Indices.size() * 3, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+    if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
+    {
+        TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+        glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
         glBindVertexArray(0);
     }
 }
@@ -422,6 +429,69 @@ void CollisionSystem::UpdatePosition(Entity* entity)
             + glm::vec3 (1.f, 1.f, -1.f);
 }
 
+void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::vec3 Normal)
+{
+    // Get components
+    PositionComponent& position = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity);
+    MovementComponent& velocity = componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity);
+    
+    // Normalize the surface normal
+    Normal = glm::normalize(Normal);    
+    
+    // Calculate penetration depth
+    float penetrationDepth = (height + 0.5f) - position.Position.y;
+
+    // Resolution parameters
+    const float BOUNCINESS = 0.6f;
+    const float FRICTION = 0.95f;
+    const float STOP_THRESHOLD = 0.01f;
+    const float ROLLING_THRESHOLD = 0.5f;
+    
+    // Resolve position (move sphere out of ground)
+    position.Position.y = height + 0.5f;
+    
+    // Calculate reflection vector
+    float dotProduct = glm::dot(velocity.Movement, Normal);
+    if (dotProduct < 0) 
+    {
+        // Basic reflection formula: v = v - 2(v·n)n
+        glm::vec3 reflection = velocity.Movement - 2.0f * dotProduct * Normal;
+
+        // Split velocity into normal and tangential components
+        glm::vec3 normalComponent = dotProduct * Normal;
+        glm::vec3 tangentialComponent = velocity.Movement - normalComponent;
+        
+        // Apply bounciness to normal component
+        normalComponent = -normalComponent * BOUNCINESS;
+        
+        // Apply friction to tangential component
+        tangentialComponent *= FRICTION;
+        
+        // Combine components
+        velocity.Movement = normalComponent + tangentialComponent;
+        
+        // Handle rolling
+        if (glm::length(velocity.Movement) < ROLLING_THRESHOLD)
+        {
+            // Calculate roll direction based on slope
+            glm::vec3 gravity(0.0f, -1.f, 0.0f);
+            glm::vec3 rollDirection = glm::cross(Normal, glm::cross(gravity, Normal));
+            
+            if (glm::length(rollDirection) > 0.0f)
+            {
+                rollDirection = glm::normalize(rollDirection);
+                velocity.Movement += rollDirection * 0.1f;
+            }
+        }
+        
+        // Stop if moving very slowly
+        if (glm::length(velocity.Movement) < STOP_THRESHOLD)
+        {
+            velocity.Movement = glm::vec3(0.0f);
+        }
+    }
+}
+
 bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, int resolution, int xLength)
 {
     glm::vec3 p1, p2, p3, player, temp, terrainPos;
@@ -481,19 +551,19 @@ bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, in
             if (componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position.y <= height + 0.5f)
             {
                 glm::vec3 Normal;
-                 if (i == 0)
-                 {
-                     Normal = terrainMesh.Vertices[index].Normal + terrainMesh.Vertices[index + xLength].Position +
-                                     terrainMesh.Vertices[index + xLength + 1].Position;
-                 }
-                 else
-                 {
-                     Normal = terrainMesh.Vertices[index].Normal + terrainMesh.Vertices[index + xLength + 1].Position +
-                                     terrainMesh.Vertices[index + 1].Position;
-                 }
-                componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position.y = height + 0.5f;
-                componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement =
-                         glm::reflect(componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement, Normal) * 0.6f;
+                if (i == 0)
+                {
+                    glm::vec3 edge1 = p2 - p1;
+                    glm::vec3 edge2 = p3 - p1;
+                    Normal = glm::normalize(glm::cross(edge1, edge2));
+                }
+                else
+                {
+                    glm::vec3 edge1 = p2 - p1;
+                    glm::vec3 edge2 = p3 - p1;
+                    Normal = glm::normalize(glm::cross(edge1, edge2));
+                }
+                ResolveGroundCollision(entity, height, Normal);
                 return true;
             }
         }
@@ -520,5 +590,85 @@ void CombatSystem::DelayTimer(Entity* entity)
     if(static_cast<ComponentHandler<CombatComponent>*>(componentmanager.Components[typeid(CombatComponent)])->GetComponent(entity).delay >= 0)
     {
         static_cast<ComponentHandler<CombatComponent>*>(componentmanager.Components[typeid(CombatComponent)])->GetComponent(entity).delay -= Engine::DeltaTime;
+    }
+}
+
+float TrackingSystem::BasisFunction(Entity* entity, int i, int k, float t)
+{
+    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+    if (k == 1) {
+        if (t >= tracking_component.knots[i] && t < tracking_component.knots[i + 1]) return 1.0f;
+        return 0.0f;
+    }
+        
+    float d1 = tracking_component.knots[i + k - 1] - tracking_component.knots[i];
+    float d2 = tracking_component.knots[i + k] - tracking_component.knots[i + 1];
+        
+    float c1 = (d1 != 0) ? (t - tracking_component.knots[i]) / d1 * BasisFunction(entity, i, k - 1, t) : 0;
+    float c2 = (d2 != 0) ? (tracking_component.knots[i + k] - t) / d2 * BasisFunction(entity, i + 1, k - 1, t) : 0;
+        
+    return c1 + c2;
+}
+
+void TrackingSystem::GenerateKnots(Entity* entity, int degree)
+{
+    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+    tracking_component.knots.clear();
+    int n = tracking_component.controlpoints.size() - 1;
+    int m = n + degree + 1;
+        
+    // Generate uniform knot vector
+    for (int i = 0; i <= m; i++) {
+        if (i < degree + 1) tracking_component.knots.push_back(0.0f);
+        else if (i > n) tracking_component.knots.push_back(1.0f);
+        else tracking_component.knots.push_back((float)(i - degree) / (n - degree + 1));
+    }
+}
+
+glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
+{
+    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+    if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for cubic
+        
+    glm::vec3 point(0.0f);
+    int n = tracking_component.controlpoints.size() - 1;
+        
+    for (int i = 0; i <= n; i++) {
+        float basis = BasisFunction(entity, i, degree + 1, t);
+        point += tracking_component.controlpoints[i] * basis;
+    }
+        
+    return point;
+}
+
+void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree)
+{
+    GenerateKnots(entity, degree);
+    
+    std::vector<Vertex> curvePoints;
+    curvePoints.reserve(numPoints);
+        
+    float step = 1.0f / (numPoints - 1);
+    for (float t = 0.0f; t <= 1.0f; t += step)
+    {
+        Vertex v = Vertex(Evaluate(entity, t, degree), color);
+        curvePoints.push_back(v);
+    }
+    
+    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
+}
+
+void TrackingSystem::TrackSphere(Entity* entity)
+{
+    glm::vec3 Pos = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
+    glm::vec3 Color = Color::Pink;
+    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points.emplace_back(Pos, Color);
+
+    if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points.size() >= 4)
+    {
+        for (Vertex v: componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points)
+        {
+            componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(v.Position);
+        }
     }
 }
