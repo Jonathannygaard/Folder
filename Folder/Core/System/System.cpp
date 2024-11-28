@@ -86,32 +86,66 @@ void MeshSystem::BindBuffers(Entity* entity)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-    ComponentHandler<MeshComponent>* componenthandler = componentmanager.GetComponentHandler<MeshComponent>();
-    MeshComponent& mesh = componenthandler->GetComponent(entity);
-    // VAO
-    glGenBuffers(1, &mesh.VBO);
+    else
+    {
+            ComponentHandler<MeshComponent>* componenthandler = componentmanager.GetComponentHandler<MeshComponent>();
+            MeshComponent& mesh = componenthandler->GetComponent(entity);
+            // VAO
+            glGenBuffers(1, &mesh.VBO);
+        
+            // VAO
+            glGenVertexArrays(1, &mesh.VAO);
+            glBindVertexArray(mesh.VAO);
+        
+            // VBO
+            glGenBuffers(1, &mesh.EBO);
+        
+            glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+            glBufferData(GL_ARRAY_BUFFER, mesh.Vertices.size() * sizeof(Vertex), mesh.Vertices.data(), GL_STATIC_DRAW);
+        
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.Indices.size() * sizeof(Triangles), mesh.Indices.data(), GL_STATIC_DRAW);
+        
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Position)));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Color)));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Normal)));
+        
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+    }
+    if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
+    {
+        ComponentHandler<TrackingComponent>* componenthandler = componentmanager.GetComponentHandler<TrackingComponent>();
+        TrackingComponent& tracking = componenthandler->GetComponent(entity);
+        glGenBuffers(1, &tracking.VBO);
+        glGenVertexArrays(1, &tracking.VAO);
+        glBindVertexArray(tracking.VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, tracking.VBO);
+        glBufferData(GL_ARRAY_BUFFER, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Position)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Color)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+}
 
-    // VAO
-    glGenVertexArrays(1, &mesh.VAO);
-    glBindVertexArray(mesh.VAO);
+void MeshSystem::UpdateBuffers(Entity* entity)
+{
+    TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
 
-    // VBO
-    glGenBuffers(1, &mesh.EBO);
+    // Bind the VAO
+    glBindVertexArray(tracking.VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, mesh.Vertices.size() * sizeof(Vertex), mesh.Vertices.data(), GL_STATIC_DRAW);
+    // Update vertex buffer
+    glBindBuffer(GL_ARRAY_BUFFER, tracking.VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data());
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.Indices.size() * sizeof(Triangles), mesh.Indices.data(), GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Position)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Color)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Normal)));
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // Unbind the VAO
     glBindVertexArray(0);
 }
 
@@ -641,7 +675,7 @@ glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
     return point;
 }
 
-void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree)
+void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system)
 {
     GenerateKnots(entity, degree);
     

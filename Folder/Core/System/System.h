@@ -21,6 +21,7 @@ public:
     MeshSystem(ComponentManager& componentManager) : componentmanager(componentManager) {}
     void DrawMesh(Entity* entity);
     void BindBuffers(Entity* entity);
+    void UpdateBuffers(Entity* entity);
     int SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 max, Entity* entity, int resolution);
     int LoadPointCloud(const std::string& filename, Entity* entity, int resolution);
     void CreateCubeMesh(Entity* entity, glm::vec3 color);
@@ -57,7 +58,7 @@ public:
     float BasisFunction(Entity* entity, int i, int k, float t);
     void GenerateKnots(Entity* entity, int degree);
     glm::vec3 Evaluate(Entity* entity, float t, int degree);
-    void CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree);
+    void CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system);
     void TrackSphere(Entity* entity);
 };
 

@@ -35,32 +35,32 @@ void Engine::Create()
     componentManager.AddComponent<CollisionComponent>(&entities[0]);
     componentManager.AddComponent<HealthComponent>(&entities[0]);
 
+    //Setting up Sphere Entity
+    for (Entity sphere: spheres)
+    {
+        componentManager.AddComponent<TrackingComponent>(&sphere);
+        componentManager.AddComponent<MeshComponent>(&sphere);
+        componentManager.AddComponent<PositionComponent>(&sphere);
+        componentManager.AddComponent<MovementComponent>(&sphere);
+        componentManager.AddComponent<MassComponent>(&sphere);
+
+        meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
+        componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
+        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
+             glm::vec3(rand()%100, rand()%100, rand()%100);
+    }
+
     //Setting up Player entity
     meshSystem.CreateCubeMesh(&entities[0], Color::Cyan);
     componentManager.GetComponentHandler<HealthComponent>()->GetComponent(&entities[0]).Health = 5;
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position = glm::vec3(0,0,0);
-
+    
     //Setting up floor entity
     componentManager.AddComponent<MeshComponent>(&entities[1]);
     componentManager.AddComponent<PositionComponent>(&entities[1]);
     xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[1]).Position =
             glm::vec3(0.f,0.f,0.f);
-
-    //Setting up Sphere Entity
-    for (Entity sphere: spheres)
-    {
-        componentManager.AddComponent<MeshComponent>(&sphere);
-        componentManager.AddComponent<PositionComponent>(&sphere);
-        componentManager.AddComponent<MovementComponent>(&sphere);
-        componentManager.AddComponent<MassComponent>(&sphere);
-        componentManager.AddComponent<TrackingComponent>(&sphere);
-
-        meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
-        componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
-        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
-             glm::vec3(rand()%100, rand()%100, rand()%100);
-    }    
 }
 
 void Engine::setup()
@@ -100,7 +100,7 @@ void Engine::update()
         trackingsystem.TrackSphere(&spheres.back());
 
         componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.back()).SplinePoints.clear();
-        trackingsystem.CreateBSpline(&spheres.back(), 10, Color::Pink, 3);
+        trackingsystem.CreateBSpline(&spheres.back(), 10, Color::Pink, 3, &meshSystem);
         
         tracktimer = 0;
     }

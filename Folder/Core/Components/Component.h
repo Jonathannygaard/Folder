@@ -50,6 +50,10 @@ public:
 
     bool HasComponent(Entity* entity)
     {
+        if (entity == nullptr)
+        {
+            return false;
+        }
         return EntityToIndex.contains(entity->ID);
     }
 };
@@ -87,6 +91,9 @@ public:
     std::vector<Vertex> Points;
     std::vector<glm::vec3> controlpoints;
     std::vector<float> knots;
+
+    unsigned int VBO;
+    unsigned int VAO;
 };
 
 class MovementComponent : public Component
