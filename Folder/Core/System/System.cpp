@@ -26,7 +26,7 @@ void MovementSystem::FindDirection(Entity* entity, Entity* target)
 
 void MovementSystem::Gravity(Entity* entity)
 {
-    float force = componentmanager.GetComponentHandler<MassComponent>()->GetComponent(entity).Mass * -1.f; 
+    float force = componentmanager.GetComponentHandler<MassComponent>()->GetComponent(entity).Mass * -0.1f; 
     componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement +=
             glm::vec3(0,force,0);
 }
@@ -52,6 +52,7 @@ void MeshSystem::DrawMesh(Entity* entity)
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
         TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+        glBindVertexArray(tracking.VAO);
         glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
         glBindVertexArray(0);
     }
@@ -663,15 +664,16 @@ glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
 {
     TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
     if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for cubic
-        
+
     glm::vec3 point(0.0f);
     int n = tracking_component.controlpoints.size() - 1;
-        
+
     for (int i = 0; i <= n; i++) {
         float basis = BasisFunction(entity, i, degree + 1, t);
         point += tracking_component.controlpoints[i] * basis;
+        std::cout << "Control Point: " << tracking_component.controlpoints[i].x << tracking_component.controlpoints[i].y << tracking_component.controlpoints[i].z << " Basis: " << basis << std::endl;
     }
-        
+
     return point;
 }
 
@@ -687,9 +689,11 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
     {
         Vertex v = Vertex(Evaluate(entity, t, degree), color);
         curvePoints.push_back(v);
+        std::cout << "Spline Point: " << v.Position.x << ", " << v.Position.y << ", " << v.Position.z << std::endl;
     }
     
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
+    mesh_system->UpdateBuffers(entity);
 }
 
 void TrackingSystem::TrackSphere(Entity* entity)

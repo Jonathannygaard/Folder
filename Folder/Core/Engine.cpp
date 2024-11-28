@@ -22,9 +22,7 @@ void Engine::Create()
         entities.emplace_back(entities.size());
         spheres.push_back(entities.back());
     }
-
-  
-
+    
     //Making seed random
     srand(time(NULL));
 
@@ -90,17 +88,13 @@ void Engine::update()
             movementSystem.Gravity(&s);
         }
         movementSystem.MoveEntity(&s);
-        
-        std::cout << componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.x << "  " <<
-            componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.y << "   " <<
-                componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&s).Position.z << "\n";
     }
     if (tracktimer > trackinterval)
     {
-        trackingsystem.TrackSphere(&spheres.back());
+        trackingsystem.TrackSphere(&spheres.front());
 
-        componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.back()).SplinePoints.clear();
-        trackingsystem.CreateBSpline(&spheres.back(), 10, Color::Pink, 3, &meshSystem);
+        componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.front()).SplinePoints.clear();
+        trackingsystem.CreateBSpline(&spheres.front(), 100, Color::Pink, 3, &meshSystem);
         
         tracktimer = 0;
     }
