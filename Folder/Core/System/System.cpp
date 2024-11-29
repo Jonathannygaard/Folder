@@ -631,7 +631,8 @@ void CombatSystem::DelayTimer(Entity* entity)
 float TrackingSystem::BasisFunction(Entity* entity, int i, int k, float t)
 {
     TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    if (k == 1) {
+    if (k == 1)
+    {
         if (t >= tracking_component.knots[i] && t < tracking_component.knots[i + 1]) return 1.0f;
         return 0.0f;
     }
@@ -648,15 +649,26 @@ float TrackingSystem::BasisFunction(Entity* entity, int i, int k, float t)
 void TrackingSystem::GenerateKnots(Entity* entity, int degree)
 {
     TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    tracking_component.knots.clear();
     int n = tracking_component.controlpoints.size() - 1;
     int m = n + degree + 1;
-        
+
+    tracking_component.knots.clear();
+    
     // Generate uniform knot vector
-    for (int i = 0; i <= m; i++) {
-        if (i < degree + 1) tracking_component.knots.push_back(0.0f);
-        else if (i > n) tracking_component.knots.push_back(1.0f);
-        else tracking_component.knots.push_back((float)(i - degree) / (n - degree + 1));
+    for (int i = 0; i < m; i++)
+    {
+        if (i <= degree)
+        {
+            tracking_component.knots.push_back(0);
+        }
+        else if (i >= m - degree - 1)
+        {
+            tracking_component.knots.push_back(m - 2 * (degree + 1) + 1);
+        }
+        else
+        {
+            tracking_component.knots.push_back(i - degree);
+        }
     }
 }
 
@@ -668,10 +680,10 @@ glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
     glm::vec3 point(0.0f);
     int n = tracking_component.controlpoints.size() - 1;
 
-    for (int i = 0; i <= n; i++) {
-        float basis = BasisFunction(entity, i, degree + 1, t);
+    for (int i = 0; i <= n; i++)
+    {
+        float basis = BasisFunction(entity, i, degree, t);
         point += tracking_component.controlpoints[i] * basis;
-        std::cout << "Control Point: " << tracking_component.controlpoints[i].x << tracking_component.controlpoints[i].y << tracking_component.controlpoints[i].z << " Basis: " << basis << std::endl;
     }
 
     return point;
@@ -689,24 +701,25 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
     {
         Vertex v = Vertex(Evaluate(entity, t, degree), color);
         curvePoints.push_back(v);
-        std::cout << "Spline Point: " << v.Position.x << ", " << v.Position.y << ", " << v.Position.z << std::endl;
     }
+    if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > 20)
+    {
+        componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
+        std::cout << "Too many control points" << std::endl;
+    }
+    
     
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
     mesh_system->UpdateBuffers(entity);
 }
 
-void TrackingSystem::TrackSphere(Entity* entity)
+void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
 {
     glm::vec3 Pos = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
     glm::vec3 Color = Color::Pink;
-    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points.emplace_back(Pos, Color);
-
-    if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points.size() >= 4)
+    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(Pos);
+    if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > 4)
     {
-        for (Vertex v: componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).Points)
-        {
-            componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(v.Position);
-        }
+        CreateBSpline(entity, 100, Color, 2, mesh_system);
     }
 }

@@ -45,7 +45,7 @@ void Engine::Create()
         meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
         componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
         componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
-             glm::vec3(rand()%100, rand()%100, rand()%100);
+             glm::vec3(rand()%100 + 100, rand()%100 + 100, rand()%100 + 100);
     }
 
     //Setting up Player entity
@@ -91,10 +91,10 @@ void Engine::update()
     }
     if (tracktimer > trackinterval)
     {
-        trackingsystem.TrackSphere(&spheres.front());
+        trackingsystem.TrackSphere(&spheres.front(), &meshSystem);
 
-        componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.front()).SplinePoints.clear();
-        trackingsystem.CreateBSpline(&spheres.front(), 100, Color::Pink, 3, &meshSystem);
+        // componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.front()).SplinePoints.clear();
+        // trackingsystem.CreateBSpline(&spheres.front(), 100, Color::Pink, 3, &meshSystem);
         
         tracktimer = 0;
     }

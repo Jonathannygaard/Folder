@@ -88,9 +88,8 @@ class TrackingComponent : public Component
 {
 public:
     std::vector<Vertex> SplinePoints;
-    std::vector<Vertex> Points;
     std::vector<glm::vec3> controlpoints;
-    std::vector<float> knots;
+    std::vector<int> knots;
 
     unsigned int VBO;
     unsigned int VAO;

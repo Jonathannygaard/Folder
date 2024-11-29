@@ -59,7 +59,7 @@ public:
     void GenerateKnots(Entity* entity, int degree);
     glm::vec3 Evaluate(Entity* entity, float t, int degree);
     void CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system);
-    void TrackSphere(Entity* entity);
+    void TrackSphere(Entity* entity, MeshSystem* mesh_system);
 };
 
 

@@ -70,7 +70,6 @@ void KeyBoardInput::processInput(GLFWwindow* window, std::vector<Entity>& entiti
 
         componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).SplinePoints.clear();
         componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).controlpoints.clear();
-        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).Points.clear();
         componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).knots.clear();
     }
 }
