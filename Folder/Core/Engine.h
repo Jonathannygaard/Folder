@@ -18,7 +18,7 @@ public:
   int xLength;
 
   float tracktimer = 0.f;
-  float trackinterval = 0.5f;
+  float trackinterval = 0.1f;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;

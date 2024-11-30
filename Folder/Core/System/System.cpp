@@ -51,6 +51,7 @@ void MeshSystem::DrawMesh(Entity* entity)
     }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
+        glLineWidth(10.f);
         TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
         glBindVertexArray(tracking.VAO);
         glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
@@ -125,7 +126,7 @@ void MeshSystem::BindBuffers(Entity* entity)
         glGenVertexArrays(1, &tracking.VAO);
         glBindVertexArray(tracking.VAO);
         glBindBuffer(GL_ARRAY_BUFFER, tracking.VBO);
-        glBufferData(GL_ARRAY_BUFFER, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data(), GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, Position)));
         glEnableVertexAttribArray(1);
@@ -141,6 +142,13 @@ void MeshSystem::UpdateBuffers(Entity* entity)
 
     // Bind the VAO
     glBindVertexArray(tracking.VAO);
+
+    glBufferData(GL_ARRAY_BUFFER, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data(), GL_DYNAMIC_DRAW);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color));
 
     // Update vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, tracking.VBO);
@@ -454,6 +462,19 @@ bool CollisionSystem::CheckCollision(Entity* entity1, Entity* entity2)
     return false;
 }
 
+bool CollisionSystem::CheckSphereCollision(Entity* entity1, Entity* entity2)
+{
+    CollisionComponent& collision = componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(entity1);
+    CollisionComponent& other = componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(entity2);
+    
+    if(glm::distance(collision.min, other.min) < collision.Radius + other.Radius)
+    {
+        ResolveSphereCollision(entity1, entity2);
+        return true;
+    }
+    return false;
+}
+
 void CollisionSystem::UpdatePosition(Entity* entity)
 {
     static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(entity).min =
@@ -525,6 +546,32 @@ void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::
             velocity.Movement = glm::vec3(0.0f);
         }
     }
+}
+
+void CollisionSystem::ResolveSphereCollision(Entity* entity1, Entity* entity2)
+{
+    CollisionComponent& entity = componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(entity1);
+    CollisionComponent& other = componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(entity2);
+
+    MovementComponent& moveEntity = componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity1);
+    MovementComponent& moveOther = componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity2);
+
+    MassComponent& massEntity = componentmanager.GetComponentHandler<MassComponent>()->GetComponent(entity1);
+    MassComponent& massOther = componentmanager.GetComponentHandler<MassComponent>()->GetComponent(entity1);
+    
+    glm::vec3 normal = glm::normalize(entity.min - other.min);
+    glm::vec3 relativeVelocity = moveEntity.Movement - moveOther.Movement;
+    float VelosityAlongNormal = glm::dot(relativeVelocity, normal);
+
+    if(VelosityAlongNormal > 0)
+        return;
+
+    float restitution = 1.f; //perfect elasticity
+    float impulse = (-(1 + restitution) * VelosityAlongNormal) / (1 / massEntity.Mass + 1 / massOther.Mass);
+
+    glm::vec3 impulseVector = impulse * normal;
+    moveEntity.Movement += impulseVector / massEntity.Mass;
+    moveOther.Movement -= impulseVector / massOther.Mass;
 }
 
 bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, int resolution, int xLength)
@@ -675,51 +722,99 @@ void TrackingSystem::GenerateKnots(Entity* entity, int degree)
 glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
 {
     TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for cubic
+    // if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for cubic
+    //
+    // glm::vec3 point(0.0f);
+    // int n = tracking_component.controlpoints.size() - 1;
+    //
+    // for (int i = 0; i <= n; i++)
+    // {
+    //     float basis = BasisFunction(entity, i, degree, t);
+    //     point += tracking_component.controlpoints[i] * basis;
+    // }
+    //
+    // return point;
 
-    glm::vec3 point(0.0f);
-    int n = tracking_component.controlpoints.size() - 1;
 
-    for (int i = 0; i <= n; i++)
-    {
-        float basis = BasisFunction(entity, i, degree, t);
-        point += tracking_component.controlpoints[i] * basis;
+    if (tracking_component.controlpoints.size() < 4) {
+        // Need at least 4 points for a meaningful B-Spline
+        return glm::vec3(0.0f);
     }
-
-    return point;
+    
+    // Ensure t is between 0 and 1
+    t = glm::clamp(t, 0.0f, 1.0f);
+    
+    // Calculate the segment index
+    int numSegments = tracking_component.controlpoints.size() - 3;
+    int segmentIndex = static_cast<int>(t * numSegments);
+    float localT = (t * numSegments) - segmentIndex;
+    
+    // Adjust indices to ensure we don't go out of bounds
+    segmentIndex = glm::clamp(segmentIndex, 0, numSegments - 1);
+    
+    // Control points for current segment
+    glm::vec3 p0 = tracking_component.controlpoints[segmentIndex];
+    glm::vec3 p1 = tracking_component.controlpoints[segmentIndex + 1];
+    glm::vec3 p2 = tracking_component.controlpoints[segmentIndex + 2];
+    glm::vec3 p3 = tracking_component.controlpoints[segmentIndex + 3];
+    
+    // B-Spline basis functions
+    float t2 = localT * localT;
+    float t3 = t2 * localT;
+    
+    float b0 = (1.0f - 3.0f * localT + 3.0f * t2 - t3) / 6.0f;
+    float b1 = (4.0f - 6.0f * t2 + 3.0f * t3) / 6.0f;
+    float b2 = (1.0f + 3.0f * localT + 3.0f * t2 - 3.0f * t3) / 6.0f;
+    float b3 = t3 / 6.0f;
+    
+    // Calculate the point on the curve
+    return b0 * p0 + b1 * p1 + b2 * p2 + b3 * p3;
 }
 
 void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system)
 {
-    GenerateKnots(entity, degree);
+    // GenerateKnots(entity, degree);
+    //
+    // std::vector<Vertex> curvePoints;
+    // curvePoints.reserve(numPoints);
+    //     
+    // float step = 1.0f / (numPoints - 1);
+    // for (float t = 0.0f; t <= 1.0f; t += step)
+    // {
+    //     Vertex v = Vertex(Evaluate(entity, t, degree), color);
+    //     curvePoints.push_back(v);
+    // }
+    // componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
+    // mesh_system->UpdateBuffers(entity);
+
+
     
-    std::vector<Vertex> curvePoints;
-    curvePoints.reserve(numPoints);
+    std::vector<Vertex> trajectoryPoints;
         
-    float step = 1.0f / (numPoints - 1);
-    for (float t = 0.0f; t <= 1.0f; t += step)
-    {
-        Vertex v = Vertex(Evaluate(entity, t, degree), color);
-        curvePoints.push_back(v);
-    }
-    if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > 20)
-    {
-        componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
-        std::cout << "Too many control points" << std::endl;
+    for (int i = 0; i < numPoints; ++i) {
+        float t = static_cast<float>(i) / (numPoints - 1);
+        trajectoryPoints.emplace_back(Evaluate(entity, t, degree), color);
     }
     
-    
-    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
+    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = trajectoryPoints;
+    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints;
+    componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
     mesh_system->UpdateBuffers(entity);
 }
 
 void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
 {
     glm::vec3 Pos = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
-    glm::vec3 Color = Color::Pink;
+    glm::vec3 Color = Color::Yellow;
+    int numPoints = 100;
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(Pos);
+
+    if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > numPoints)
+    {
+        componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.erase(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.begin());
+    }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > 4)
     {
-        CreateBSpline(entity, 100, Color, 2, mesh_system);
+        CreateBSpline(entity, numPoints, Color, 2, mesh_system);
     }
 }

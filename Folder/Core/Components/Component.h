@@ -130,6 +130,7 @@ class CollisionComponent : public Component
 public:
     glm::vec3 min;
     glm::vec3 max;
+    float Radius;
 };
 
 class CombatComponent : public Component

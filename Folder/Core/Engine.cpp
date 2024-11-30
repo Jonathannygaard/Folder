@@ -33,19 +33,22 @@ void Engine::Create()
     componentManager.AddComponent<CollisionComponent>(&entities[0]);
     componentManager.AddComponent<HealthComponent>(&entities[0]);
 
+    
+    componentManager.AddComponent<TrackingComponent>(&spheres.front());
     //Setting up Sphere Entity
     for (Entity sphere: spheres)
     {
-        componentManager.AddComponent<TrackingComponent>(&sphere);
         componentManager.AddComponent<MeshComponent>(&sphere);
         componentManager.AddComponent<PositionComponent>(&sphere);
         componentManager.AddComponent<MovementComponent>(&sphere);
         componentManager.AddComponent<MassComponent>(&sphere);
+        componentManager.AddComponent<CollisionComponent>(&sphere);
 
         meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
+        componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&sphere).Radius = 1.f;
         componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
         componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
-             glm::vec3(rand()%100 + 100, rand()%100 + 100, rand()%100 + 100);
+             glm::vec3(rand()%10 + 100, rand()%100 + 100, rand()%10 + 100);
     }
 
     //Setting up Player entity
@@ -83,19 +86,25 @@ void Engine::update()
     
     for (Entity s: spheres)
     {
+        collisionSystem.UpdatePosition(&s);
+        for(Entity entity : spheres)
+        {
+            if(s.ID == entity.ID)
+            {
+                continue;
+            }
+            collisionSystem.CheckSphereCollision(&s, &entity);
+        }
         if (!collisionSystem.BarycentricCoordinates(&entities[1], &s, TerrainResolution, xLength))
         {
             movementSystem.Gravity(&s);
         }
         movementSystem.MoveEntity(&s);
     }
+    
     if (tracktimer > trackinterval)
     {
-        trackingsystem.TrackSphere(&spheres.front(), &meshSystem);
-
-        // componentManager.GetComponentHandler<TrackingComponent>()->GetComponent(&spheres.front()).SplinePoints.clear();
-        // trackingsystem.CreateBSpline(&spheres.front(), 100, Color::Pink, 3, &meshSystem);
-        
+        trackingsystem.TrackSphere(&spheres.front(), &meshSystem);        
         tracktimer = 0;
     }
     tracktimer += DeltaTime;
