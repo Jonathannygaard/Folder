@@ -23,9 +23,9 @@ public:
     void BindBuffers(Entity* entity);
     void UpdateBuffers(Entity* entity);
     int SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 max, Entity* entity, int resolution);
-    int LoadPointCloud(const std::string& filename, Entity* entity, int resolution);
+    int LoadPointCloud(const std::string& filename, Entity* entity, int resolution, bool isPointcloud);
     void CreateCubeMesh(Entity* entity, glm::vec3 color);
-    int CreateFloorMesh(Entity* entity, int resolution);
+    int CreateFloorMesh(Entity* entity, int resolution, bool isPointcloud);
     void CreateSphereMesh(Entity* entity, int Sectors, int Stacks, float radius, glm::vec3 color);
 };
 

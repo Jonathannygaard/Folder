@@ -274,7 +274,7 @@ int MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 
     return xLength;
 }
 
-int MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity, int resolution)
+int MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity, int resolution, bool isPointcloud)
 {
     std::vector<Vertex> points;
     std::ifstream file(filename);
@@ -331,6 +331,12 @@ int MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity, int 
     {
         point.Position -= minPoint;
     }
+    if (isPointcloud)
+    {
+        componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Vertices = points;
+        BindBuffers(entity);
+        return 0;
+    }
     return SortPoints(points, minPoint,maxPoint,entity, resolution);
 }
 
@@ -384,9 +390,9 @@ void MeshSystem::CreateCubeMesh(Entity* entity, glm::vec3 color)
     BindBuffers(entity);
 }
 
-int MeshSystem::CreateFloorMesh(Entity* entity, int resolution)
+int MeshSystem::CreateFloorMesh(Entity* entity, int resolution, bool isPointcloud)
 {
-    return LoadPointCloud("map.txt", entity, resolution);
+    return LoadPointCloud("map.txt", entity, resolution, isPointcloud);
 }
 
 

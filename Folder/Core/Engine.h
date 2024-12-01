@@ -20,6 +20,8 @@ public:
   float tracktimer = 0.f;
   float trackinterval = 0.1f;
 
+    bool isPointcloud = false;
+
   ComponentManager componentManager;
   MeshSystem meshSystem;
   MovementSystem movementSystem;

@@ -59,7 +59,7 @@ void Engine::Create()
     //Setting up floor entity
     componentManager.AddComponent<MeshComponent>(&entities[1]);
     componentManager.AddComponent<PositionComponent>(&entities[1]);
-    xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution);
+    xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution, isPointcloud);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[1]).Position =
             glm::vec3(0.f,0.f,0.f);
 }
