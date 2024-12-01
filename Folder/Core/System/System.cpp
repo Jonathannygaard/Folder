@@ -51,8 +51,15 @@ void MeshSystem::DrawMesh(Entity* entity)
     }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
-        glLineWidth(10.f);
         TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+        // glm::mat4 model = glm::mat4(1.0f);
+        // if (!tracking.SplinePoints.empty())
+        // {
+        //     model = glm::translate(model, tracking.SplinePoints.front().Position);
+        // }
+        // glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
+        
+        glLineWidth(10.f);
         glBindVertexArray(tracking.VAO);
         glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
         glBindVertexArray(0);
@@ -792,8 +799,6 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
     // }
     // componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
     // mesh_system->UpdateBuffers(entity);
-
-
     
     std::vector<Vertex> trajectoryPoints;
         

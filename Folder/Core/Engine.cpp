@@ -69,6 +69,11 @@ void Engine::setup()
     Window = Window::init();
     MainCamera.init();
     glLineWidth(10.f);
+    if (isWireframe)
+    {
+       glPolygonMode(GL_FRONT_AND_BACK,GL_LINE); 
+    }
+    
     Create();
 }
 
@@ -102,7 +107,7 @@ void Engine::update()
         movementSystem.MoveEntity(&s);
     }
     
-    if (tracktimer > trackinterval)
+    //if (tracktimer > trackinterval)
     {
         trackingsystem.TrackSphere(&spheres.front(), &meshSystem);        
         tracktimer = 0;

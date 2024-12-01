@@ -12,7 +12,7 @@ public:
   static inline Camera MainCamera;
   static inline float DeltaTime;
     
-  int AmountOfSpheres = 10;
+  int AmountOfSpheres = 1;
     
   int TerrainResolution = 6;
   int xLength;
@@ -21,6 +21,7 @@ public:
   float trackinterval = 0.1f;
 
     bool isPointcloud = false;
+    bool isWireframe = false;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;
