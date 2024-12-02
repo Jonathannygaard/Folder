@@ -16,9 +16,6 @@ void Engine::Create()
     //Creating point map
     entities.emplace_back(entities.size());
 
-    //Creating Friction area
-    entities.emplace_back(entities.size());
-
     //Creating Sphere entities
     for (int i = 0; i < AmountOfSpheres; i++)
     {
@@ -64,13 +61,25 @@ void Engine::Create()
     xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution, isPointcloud);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[1]).Position =
             glm::vec3(0.f,0.f,0.f);
+}
 
-    //Setting up Friction area
-    componentManager.AddComponent<MeshComponent>(&entities[2]);
-    componentManager.AddComponent<PositionComponent>(&entities[2]);
-    meshSystem.CreateCubeMesh(&entities[2], Color::Red);
-    componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[2]).Position =
-            glm::vec3(0.f,0.f,0.f);
+void Engine::CreateSphere()
+{
+    entities.emplace_back(entities.size());
+    spheres.push_back(entities.back());
+
+    componentManager.AddComponent<MeshComponent>(&spheres.back());
+    componentManager.AddComponent<PositionComponent>(&spheres.back());
+    componentManager.AddComponent<MovementComponent>(&spheres.back());
+    componentManager.AddComponent<MassComponent>(&spheres.back());
+    componentManager.AddComponent<CollisionComponent>(&spheres.back());
+    componentManager.AddComponent<TrackingComponent>(&spheres.back());
+        
+    meshSystem.CreateSphereMesh(&spheres.back(), 16, 16, 1.f, Color::Lavender);
+    componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&spheres.back()).Radius = 1.f;
+    componentManager.GetComponentHandler<MassComponent>()->GetComponent(&spheres.back()).Mass = 1.f;
+    componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&spheres.back()).Position =
+        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
 }
 
 void Engine::setup()
@@ -86,17 +95,11 @@ void Engine::Draw()
 {
     for(Entity entity : entities)
     {
-        if (entity.ID == 2)
+        if (entity.ID == 0)
         {
-            isWireframe = true;
-        }
-        
+            continue;
+        }        
         meshSystem.DrawMesh(&entity);
-
-        if (entity.ID == 2)
-        {
-            isWireframe = false;
-        }
     }
 }
 
@@ -155,7 +158,7 @@ void Engine::run()
         glUniformMatrix4fv(MainCamera.projectionLoc, 1, GL_FALSE, glm::value_ptr(MainCamera.getProjection(Window::Width, Window::Height)));
         glUniformMatrix4fv(MainCamera.viewLoc, 1, GL_FALSE, glm::value_ptr(MainCamera.getView()));
 
-        KeyBoardInput::processInput(Window, entities, &componentManager);
+        KeyBoardInput::processInput(Window, entities, &componentManager, this);
     
         glfwSwapBuffers(Window);
         glfwPollEvents();

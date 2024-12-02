@@ -32,6 +32,7 @@ public:
   TrackingSystem trackingsystem;
 
   void Create();
+  void CreateSphere();
   void setup();
   void update();
   void run();

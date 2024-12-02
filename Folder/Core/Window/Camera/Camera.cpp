@@ -20,7 +20,8 @@ glm::mat4 Camera::getProjection(float width, float height) {
     return proj;
 }
 
-void Camera::setPlayerPos(glm::vec3 position) {
+void Camera::setPlayerPos(glm::vec3 position)
+{
     PlayerPos = glm::vec3(position.x + 0.375f, position.y + 0.65f, position.z - 0.375f);
 }
 
@@ -30,7 +31,8 @@ glm::vec3 Camera::OrbitCamera()
     return cameraPos;
 }
 
-void Camera::updatePos(glm::vec3 newpos) {
+void Camera::updatePos(glm::vec3 newpos)
+{
     cameraPos += newpos;
     cameraFront += newpos;
 }

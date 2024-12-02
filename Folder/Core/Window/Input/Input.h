@@ -2,6 +2,7 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 
+class Engine;
 class ComponentManager;
 class Entity;
 class Cube;
@@ -17,7 +18,7 @@ public:
 class KeyBoardInput
 {
 public:
-    static void processInput(GLFWwindow* window, std::vector<Entity>& entities, ComponentManager* componentManager);
+    static void processInput(GLFWwindow* window, std::vector<Entity>& entities, ComponentManager* componentManager, Engine* engine);
 };
 
 namespace MouseInput

@@ -590,7 +590,7 @@ void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::
             if (glm::length(rollDirection) > 0.0f)
             {
                 rollDirection = glm::normalize(rollDirection);
-                velocity.Movement += rollDirection * 0.1f;
+                velocity.Movement += rollDirection;
             }
         }
         
