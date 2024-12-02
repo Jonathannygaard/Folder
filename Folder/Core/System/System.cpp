@@ -52,17 +52,17 @@ void MeshSystem::DrawMesh(Entity* entity)
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
         TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-        // glm::mat4 model = glm::mat4(1.0f);
-        // if (!tracking.SplinePoints.empty())
-        // {
-        //     model = glm::translate(model, tracking.SplinePoints.front().Position);
-        // }
-        // glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
+        glm::mat4 model = glm::mat4(1.0f);
         
-        glLineWidth(10.f);
+        glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
         glBindVertexArray(tracking.VAO);
         glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
         glBindVertexArray(0);
+    }
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        std::cout << "Error: " << std::to_string(error) << '\n';
     }
 }
 
@@ -149,7 +149,7 @@ void MeshSystem::UpdateBuffers(Entity* entity)
 
     // Bind the VAO
     glBindVertexArray(tracking.VAO);
-
+    
     glBufferData(GL_ARRAY_BUFFER, tracking.SplinePoints.size() * sizeof(Vertex), tracking.SplinePoints.data(), GL_DYNAMIC_DRAW);
     
     glEnableVertexAttribArray(0);
@@ -688,22 +688,28 @@ void CombatSystem::DelayTimer(Entity* entity)
     }
 }
 
-float TrackingSystem::BasisFunction(Entity* entity, int i, int k, float t)
+float TrackingSystem::BasisFunction(TrackingComponent* tracking_component, int d, int i, float t)
 {
-    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    if (k == 1)
+    //TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+    if (d == 0 || i + d + 1 >= tracking_component->knots.size())
     {
-        if (t >= tracking_component.knots[i] && t < tracking_component.knots[i + 1]) return 1.0f;
+        if (t >= tracking_component->knots[i] && t < tracking_component->knots[i + 1]) return 1.0f;
         return 0.0f;
     }
-        
-    float d1 = tracking_component.knots[i + k - 1] - tracking_component.knots[i];
-    float d2 = tracking_component.knots[i + k] - tracking_component.knots[i + 1];
-        
-    float c1 = (d1 != 0) ? (t - tracking_component.knots[i]) / d1 * BasisFunction(entity, i, k - 1, t) : 0;
-    float c2 = (d2 != 0) ? (tracking_component.knots[i + k] - t) / d2 * BasisFunction(entity, i + 1, k - 1, t) : 0;
-        
-    return c1 + c2;
+
+    float leftWeight = 0.0f;
+    if (tracking_component->knots[i + d] - tracking_component->knots[i] != 0.0f) {
+        leftWeight = (t - tracking_component->knots[i]) / (tracking_component->knots[i + d] - tracking_component->knots[i]);
+    }
+    float leftBasis = leftWeight * BasisFunction(tracking_component, d - 1, i, t);
+
+    float rightWeight = 0.0f;
+    if (tracking_component->knots[i + d + 1] - tracking_component->knots[i + 1] != 0.0f) {
+        rightWeight = (tracking_component->knots[i + d + 1] - t) / (tracking_component->knots[i + d + 1] - tracking_component->knots[i + 1]);
+    }
+    float rightBasis = rightWeight * BasisFunction(tracking_component, d - 1, i + 1, t);
+
+    return leftBasis + rightBasis;
 }
 
 void TrackingSystem::GenerateKnots(Entity* entity, int degree)
@@ -715,7 +721,7 @@ void TrackingSystem::GenerateKnots(Entity* entity, int degree)
     tracking_component.knots.clear();
     
     // Generate uniform knot vector
-    for (int i = 0; i < m; i++)
+    for (int i = 0; i <= m; i++)
     {
         if (i <= degree)
         {
@@ -735,89 +741,55 @@ void TrackingSystem::GenerateKnots(Entity* entity, int degree)
 glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
 {
     TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    // if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for cubic
-    //
-    // glm::vec3 point(0.0f);
-    // int n = tracking_component.controlpoints.size() - 1;
-    //
-    // for (int i = 0; i <= n; i++)
-    // {
-    //     float basis = BasisFunction(entity, i, degree, t);
-    //     point += tracking_component.controlpoints[i] * basis;
-    // }
-    //
-    // return point;
-
-
-    if (tracking_component.controlpoints.size() < 4) {
-        // Need at least 4 points for a meaningful B-Spline
-        return glm::vec3(0.0f);
+    if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for quadratic
+    
+    glm::vec3 point(0.0f);
+    int n = tracking_component.controlpoints.size() - 1;
+    
+    for (int i = 0; i <= n; i++)
+    {
+        float basis = BasisFunction(&tracking_component, degree, i, t);
+        point += tracking_component.controlpoints[i] * basis;
     }
     
-    // Ensure t is between 0 and 1
-    t = glm::clamp(t, 0.0f, 1.0f);
-    
-    // Calculate the segment index
-    int numSegments = tracking_component.controlpoints.size() - 3;
-    int segmentIndex = static_cast<int>(t * numSegments);
-    float localT = (t * numSegments) - segmentIndex;
-    
-    // Adjust indices to ensure we don't go out of bounds
-    segmentIndex = glm::clamp(segmentIndex, 0, numSegments - 1);
-    
-    // Control points for current segment
-    glm::vec3 p0 = tracking_component.controlpoints[segmentIndex];
-    glm::vec3 p1 = tracking_component.controlpoints[segmentIndex + 1];
-    glm::vec3 p2 = tracking_component.controlpoints[segmentIndex + 2];
-    glm::vec3 p3 = tracking_component.controlpoints[segmentIndex + 3];
-    
-    // B-Spline basis functions
-    float t2 = localT * localT;
-    float t3 = t2 * localT;
-    
-    float b0 = (1.0f - 3.0f * localT + 3.0f * t2 - t3) / 6.0f;
-    float b1 = (4.0f - 6.0f * t2 + 3.0f * t3) / 6.0f;
-    float b2 = (1.0f + 3.0f * localT + 3.0f * t2 - 3.0f * t3) / 6.0f;
-    float b3 = t3 / 6.0f;
-    
-    // Calculate the point on the curve
-    return b0 * p0 + b1 * p1 + b2 * p2 + b3 * p3;
+    return point;
 }
 
 void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system)
 {
-    // GenerateKnots(entity, degree);
-    //
-    // std::vector<Vertex> curvePoints;
-    // curvePoints.reserve(numPoints);
-    //     
-    // float step = 1.0f / (numPoints - 1);
-    // for (float t = 0.0f; t <= 1.0f; t += step)
-    // {
-    //     Vertex v = Vertex(Evaluate(entity, t, degree), color);
-    //     curvePoints.push_back(v);
-    // }
-    // componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = curvePoints;
-    // mesh_system->UpdateBuffers(entity);
+    GenerateKnots(entity, degree);
     
-    std::vector<Vertex> trajectoryPoints;
-        
-    for (int i = 0; i < numPoints; ++i) {
-        float t = static_cast<float>(i) / (numPoints - 1);
-        trajectoryPoints.emplace_back(Evaluate(entity, t, degree), color);
+    std::vector<Vertex> curvePoints;
+    curvePoints.reserve(numPoints);
+
+    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+
+    int n = tracking_component.controlpoints.size();
+    
+    float step = 1.0f / numPoints;
+    for (float t = 0.0f; t <= 1.0f; t += step)
+    {
+        glm::vec3 point(0.0f);
+        for (int i = 0; i < n; i++)
+        {
+            float basis = BasisFunction(&tracking_component, degree, i, t);
+            point += tracking_component.controlpoints[i] * basis;
+        }
+        Vertex v = Vertex(point, color);
+        curvePoints.push_back(v);
     }
+    tracking_component.SplinePoints = curvePoints;
+    mesh_system->UpdateBuffers(entity);
     
-    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints = trajectoryPoints;
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints;
     componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
-    mesh_system->UpdateBuffers(entity);
 }
 
 void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
 {
     glm::vec3 Pos = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
     glm::vec3 Color = Color::Yellow;
-    int numPoints = 100;
+    int numPoints = 1000;
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(Pos);
 
     if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > numPoints)

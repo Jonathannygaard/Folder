@@ -57,7 +57,7 @@ class TrackingSystem : public System
 public:
     ComponentManager& componentmanager;
     TrackingSystem(ComponentManager& componentmanager): componentmanager(componentmanager){}
-    float BasisFunction(Entity* entity, int i, int k, float t);
+    float BasisFunction(TrackingComponent* tracking, int i, int d, float t);
     void GenerateKnots(Entity* entity, int degree);
     glm::vec3 Evaluate(Entity* entity, float t, int degree);
     void CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system);

@@ -72,6 +72,10 @@ void KeyBoardInput::processInput(GLFWwindow* window, std::vector<Entity>& entiti
         componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).controlpoints.clear();
         componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).knots.clear();
     }
+    if(glfwGetKey(window, GLFW_KEY_O)==GLFW_PRESS)
+    {
+        Engine::isWireframe = !Engine::isWireframe;
+    }
 }
 
 namespace MouseInput

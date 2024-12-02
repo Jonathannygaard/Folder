@@ -74,6 +74,7 @@ public:
     template<typename T>
     ComponentHandler<T>* GetComponentHandler()
     {
+        ComponentHandler<T> handler;
         return static_cast<ComponentHandler<T>*>(Components[typeid(T)]);
     }
 };

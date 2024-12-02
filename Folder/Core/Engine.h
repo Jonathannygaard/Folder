@@ -20,8 +20,9 @@ public:
   float tracktimer = 0.f;
   float trackinterval = 0.1f;
 
-    bool isPointcloud = false;
-    bool isWireframe = false;
+    static inline bool isPointcloud = false;
+    
+    static inline bool isWireframe = false;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;
