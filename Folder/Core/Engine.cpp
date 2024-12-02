@@ -16,6 +16,9 @@ void Engine::Create()
     //Creating point map
     entities.emplace_back(entities.size());
 
+    //Creating Friction area
+    entities.emplace_back(entities.size());
+
     //Creating Sphere entities
     for (int i = 0; i < AmountOfSpheres; i++)
     {
@@ -32,9 +35,7 @@ void Engine::Create()
     componentManager.AddComponent<MovementComponent>(&entities[0]);
     componentManager.AddComponent<CollisionComponent>(&entities[0]);
     componentManager.AddComponent<HealthComponent>(&entities[0]);
-
     
-    componentManager.AddComponent<TrackingComponent>(&spheres.front());
     //Setting up Sphere Entity
     for (Entity sphere: spheres)
     {
@@ -43,12 +44,13 @@ void Engine::Create()
         componentManager.AddComponent<MovementComponent>(&sphere);
         componentManager.AddComponent<MassComponent>(&sphere);
         componentManager.AddComponent<CollisionComponent>(&sphere);
-
+        componentManager.AddComponent<TrackingComponent>(&sphere);
+        
         meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
         componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&sphere).Radius = 1.f;
         componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
         componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
-             glm::vec3(rand()%10 + 100, rand()%100 + 100, rand()%10 + 100);
+             glm::vec3(rand()%100 + 50, rand()%20 + 10, rand()%100 + 50);
     }
 
     //Setting up Player entity
@@ -61,6 +63,13 @@ void Engine::Create()
     componentManager.AddComponent<PositionComponent>(&entities[1]);
     xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution, isPointcloud);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[1]).Position =
+            glm::vec3(0.f,0.f,0.f);
+
+    //Setting up Friction area
+    componentManager.AddComponent<MeshComponent>(&entities[2]);
+    componentManager.AddComponent<PositionComponent>(&entities[2]);
+    meshSystem.CreateCubeMesh(&entities[2], Color::Red);
+    componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[2]).Position =
             glm::vec3(0.f,0.f,0.f);
 }
 
@@ -77,20 +86,22 @@ void Engine::Draw()
 {
     for(Entity entity : entities)
     {
+        if (entity.ID == 2)
+        {
+            isWireframe = true;
+        }
+        
         meshSystem.DrawMesh(&entity);
+
+        if (entity.ID == 2)
+        {
+            isWireframe = false;
+        }
     }
 }
 
 void Engine::update()
 {
-    if (isWireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE); 
-    }
-    else
-    {
-        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-    }
     collisionSystem.UpdatePosition(&entities[0]);
     
     for (Entity s: spheres)
@@ -110,11 +121,13 @@ void Engine::update()
         }
         movementSystem.MoveEntity(&s);
     }
-    
     if (tracktimer > trackinterval)
     {
-        trackingsystem.TrackSphere(&spheres.front(), &meshSystem);        
-        tracktimer = 0;
+        for (Entity s: spheres)
+        {
+            trackingsystem.TrackSphere(&s, &meshSystem);        
+            tracktimer = 0;
+        }
     }
     tracktimer += DeltaTime;
     

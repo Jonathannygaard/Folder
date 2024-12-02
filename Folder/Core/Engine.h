@@ -12,7 +12,7 @@ public:
   static inline Camera MainCamera;
   static inline float DeltaTime;
     
-  int AmountOfSpheres = 1;
+  int AmountOfSpheres = 10;
     
   int TerrainResolution = 6;
   int xLength;

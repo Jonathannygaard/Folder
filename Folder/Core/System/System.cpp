@@ -33,6 +33,14 @@ void MovementSystem::Gravity(Entity* entity)
 
 void MeshSystem::DrawMesh(Entity* entity)
 {
+    if (Engine::isWireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK,GL_LINE); 
+    }
+    else
+    {
+        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+    }
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position);
     glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
@@ -51,13 +59,16 @@ void MeshSystem::DrawMesh(Entity* entity)
     }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
-        TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-        glm::mat4 model = glm::mat4(1.0f);
+        if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).SplinePoints.size() > 1)
+        {
+            TrackingComponent& tracking = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
+            glm::mat4 model = glm::mat4(1.0f);
         
-        glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
-        glBindVertexArray(tracking.VAO);
-        glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size());
-        glBindVertexArray(0);
+            glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
+            glBindVertexArray(tracking.VAO);
+            glDrawArrays(GL_LINE_STRIP, 0, tracking.SplinePoints.size()-1);
+            glBindVertexArray(0);
+        }
     }
     GLenum error = glGetError();
     if (error != GL_NO_ERROR)
@@ -273,6 +284,27 @@ int MeshSystem::SortPoints(std::vector<Vertex> points, glm::vec3 min, glm::vec3 
         Temp[Triangles.a].Normal += Normal;
         Temp[Triangles.b].Normal += Normal;
         Temp[Triangles.c].Normal += Normal;
+        
+        if (Temp[Triangles.a].Position.y < - 50)
+        {
+            Temp[Triangles.a].Color = glm::vec3(1,0,0);
+            Temp[Triangles.a].Friction = 0.f;
+            Temp[Triangles.a].Bounce = 0.f;
+        }
+
+        if (Temp[Triangles.b].Position.y < - 50)
+        {
+            Temp[Triangles.b].Color = glm::vec3(1,0,0);
+            Temp[Triangles.b].Friction = 0.f;
+            Temp[Triangles.a].Bounce = 0.f;
+        }
+
+        if (Temp[Triangles.c].Position.y < - 50)
+        {
+            Temp[Triangles.c].Color = glm::vec3(1,0,0);
+            Temp[Triangles.c].Friction = 0.f;
+            Temp[Triangles.a].Bounce = 0.f;
+        }
     }
     
     componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity).Vertices = Temp;
@@ -402,7 +434,6 @@ int MeshSystem::CreateFloorMesh(Entity* entity, int resolution, bool isPointclou
     return LoadPointCloud("map.txt", entity, resolution, isPointcloud);
 }
 
-
 void MeshSystem::CreateSphereMesh(Entity* entity, int Sectors, int Stacks, float radius, glm::vec3 color)
 {
     float x, y, z, xy;
@@ -447,8 +478,18 @@ void MeshSystem::CreateSphereMesh(Entity* entity, int Sectors, int Stacks, float
                 }
             }
         }
-        BindBuffers(entity);
     }
+    MeshComponent mesh = componentmanager.GetComponentHandler<MeshComponent>()->GetComponent(entity);
+    
+    for (auto element : mesh.Indices)
+    {
+        glm::vec3 normal = glm::normalize(glm::cross(mesh.Vertices[element.b].Position - mesh.Vertices[element.a].Position,
+                                      mesh.Vertices[element.c].Position - mesh.Vertices[element.a].Position));
+        mesh.Vertices[element.a].Normal += normal;
+        mesh.Vertices[element.b].Normal += normal;
+        mesh.Vertices[element.c].Normal += normal;
+    }
+    BindBuffers(entity);
 }
 
 bool CollisionSystem::CheckCollision(Entity* entity1, Entity* entity2)
@@ -498,7 +539,7 @@ void CollisionSystem::UpdatePosition(Entity* entity)
             + glm::vec3 (1.f, 1.f, -1.f);
 }
 
-void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::vec3 Normal)
+void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::vec3 Normal, float friction, float Bounce)
 {
     // Get components
     PositionComponent& position = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity);
@@ -511,8 +552,8 @@ void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::
     float penetrationDepth = (height + 0.5f) - position.Position.y;
 
     // Resolution parameters
-    const float BOUNCINESS = 0.6f;
-    const float FRICTION = 0.95f;
+    const float BOUNCINESS = Bounce; //0.6f;
+    const float FRICTION = friction;
     const float STOP_THRESHOLD = 0.01f;
     const float ROLLING_THRESHOLD = 0.5f;
     
@@ -604,7 +645,8 @@ bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, in
     {
         return false;
     }
-    
+    float friction;
+    float Bounce;
     for(int i = 0; i < 2; i++)
     {
         if(i==0)
@@ -612,12 +654,36 @@ bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, in
             p1 = terrainMesh.Vertices[index].Position;
             p2 = terrainMesh.Vertices[index + xLength].Position;
             p3 = terrainMesh.Vertices[index + xLength + 1].Position;
+            
+            friction = terrainMesh.Vertices[index].Friction +
+                terrainMesh.Vertices[index + xLength].Friction +
+                    terrainMesh.Vertices[index + xLength + 1].Friction;
+
+            friction /= 3;
+
+            Bounce = terrainMesh.Vertices[index].Bounce +
+                terrainMesh.Vertices[index + xLength].Bounce +
+                    terrainMesh.Vertices[index + xLength + 1].Bounce;
+
+            Bounce /= 3;
         }
         else
         {
             p1 = terrainMesh.Vertices[index].Position;
             p2 = terrainMesh.Vertices[index + xLength +1].Position;
             p3 = terrainMesh.Vertices[index + 1].Position;
+
+            friction = terrainMesh.Vertices[index].Friction +
+                terrainMesh.Vertices[index + xLength + 1].Friction +
+                    terrainMesh.Vertices[index + 1].Friction;
+
+            friction /= 3;
+
+            Bounce = terrainMesh.Vertices[index].Bounce +
+               terrainMesh.Vertices[index + xLength + 1].Bounce +
+                   terrainMesh.Vertices[index + 1].Bounce;
+
+            Bounce /= 3;
         }
 
         // Calculate barycentric coordinates
@@ -658,7 +724,7 @@ bool CollisionSystem::BarycentricCoordinates(Entity* terrain, Entity* entity, in
                     glm::vec3 edge2 = p3 - p1;
                     Normal = glm::normalize(glm::cross(edge1, edge2));
                 }
-                ResolveGroundCollision(entity, height, Normal);
+                ResolveGroundCollision(entity, height, Normal, friction, Bounce);
                 return true;
             }
         }
@@ -738,23 +804,6 @@ void TrackingSystem::GenerateKnots(Entity* entity, int degree)
     }
 }
 
-glm::vec3 TrackingSystem::Evaluate(Entity* entity, float t, int degree)
-{
-    TrackingComponent& tracking_component = componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity);
-    if (tracking_component.controlpoints.size() < 4) return glm::vec3(0.0f); // Need at least 4 points for quadratic
-    
-    glm::vec3 point(0.0f);
-    int n = tracking_component.controlpoints.size() - 1;
-    
-    for (int i = 0; i <= n; i++)
-    {
-        float basis = BasisFunction(&tracking_component, degree, i, t);
-        point += tracking_component.controlpoints[i] * basis;
-    }
-    
-    return point;
-}
-
 void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 color, int degree, MeshSystem* mesh_system)
 {
     GenerateKnots(entity, degree);
@@ -766,8 +815,7 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
 
     int n = tracking_component.controlpoints.size();
     
-    float step = 1.0f / numPoints;
-    for (float t = 0.0f; t <= 1.0f; t += step)
+    for (int t = 0.0f; t <= tracking_component.knots.back(); t++)
     {
         glm::vec3 point(0.0f);
         for (int i = 0; i < n; i++)
@@ -788,8 +836,8 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
 void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
 {
     glm::vec3 Pos = componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
-    glm::vec3 Color = Color::Yellow;
-    int numPoints = 1000;
+    glm::vec3 Color = Color::Pink;
+    int numPoints = 100;
     componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.push_back(Pos);
 
     if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > numPoints)
