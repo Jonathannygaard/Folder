@@ -344,7 +344,8 @@ int MeshSystem::LoadPointCloud(const std::string& filename, Entity* entity, int 
             float nx, ny, nz, a;
         
             //Supports both space and tab seperated values
-            if (sscanf_s(line.c_str(), "%f %f %f %f %f %f %f %f %f %f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10 || sscanf_s(line.c_str(), "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10)
+            if (sscanf_s(line.c_str(), "%f %f %f %f %f %f %f %f %f %f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10 ||
+                        sscanf_s(line.c_str(), "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f", &x, &y, &z, &r, &g, &b, &nx, &ny, &nz, &a) == 10)
             {
                 float xf = x;
                 float yf = z;
@@ -552,7 +553,7 @@ void CollisionSystem::ResolveGroundCollision(Entity* entity, float height, glm::
     float penetrationDepth = (height + 0.5f) - position.Position.y;
 
     // Resolution parameters
-    const float BOUNCINESS = Bounce; //0.6f;
+    const float BOUNCINESS = Bounce; 
     const float FRICTION = friction;
     const float STOP_THRESHOLD = 0.01f;
     const float ROLLING_THRESHOLD = 0.5f;
@@ -828,9 +829,6 @@ void TrackingSystem::CreateBSpline(Entity* entity, int numPoints, glm::vec3 colo
     }
     tracking_component.SplinePoints = curvePoints;
     mesh_system->UpdateBuffers(entity);
-    
-    componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints;
-    componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position;
 }
 
 void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
@@ -842,7 +840,8 @@ void TrackingSystem::TrackSphere(Entity* entity, MeshSystem* mesh_system)
 
     if(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > numPoints)
     {
-        componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.erase(componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.begin());
+        componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.erase(
+            componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.begin());
     }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->GetComponent(entity).controlpoints.size() > 4)
     {
