@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Components/Component.h"
+#include "Lua/Lua.h"
 #include "System/System.h"
 #include "Window/Camera/Camera.h"
 
@@ -11,6 +12,7 @@ public:
   GLFWwindow *Window;
   static inline Camera MainCamera;
   static inline float DeltaTime;
+    Lua lua;
     
   int AmountOfSpheres = 10;
     

@@ -79,11 +79,14 @@ void Engine::CreateSphere()
     componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&spheres.back()).Radius = 1.f;
     componentManager.GetComponentHandler<MassComponent>()->GetComponent(&spheres.back()).Mass = 1.f;
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&spheres.back()).Position =
-        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
+    componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
 }
 
 void Engine::setup()
 {
+    lua.setup();
+    lua.RegisterFunctions();
+    
     Window = Window::init();
     MainCamera.init();
     glLineWidth(10.f);
@@ -105,6 +108,8 @@ void Engine::Draw()
 
 void Engine::update()
 {
+    lua.DoFile();
+    
     collisionSystem.UpdatePosition(&entities[0]);
     
     for (Entity s: spheres)

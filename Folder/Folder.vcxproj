@@ -158,13 +158,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\Folder\Dependencies\libs</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;Opengl32.lib</AdditionalDependencies>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);glfw3.lib;Opengl32.lib; lua54.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\Components\Component.cpp" />
     <ClCompile Include="Core\Engine.cpp" />
     <ClCompile Include="Core\Entity\Entity.cpp" />
+    <ClCompile Include="Core\Lua\Lua.cpp" />
     <ClCompile Include="Core\Shader\Shader.cpp" />
     <ClCompile Include="Core\System\System.cpp" />
     <ClCompile Include="Core\Window\Camera\Camera.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="Core\Components\Component.h" />
     <ClInclude Include="Core\Engine.h" />
     <ClInclude Include="Core\Entity\Entity.h" />
+    <ClInclude Include="Core\Lua\Lua.h" />
     <ClInclude Include="Core\Shader\Shader.h" />
     <ClInclude Include="Core\System\System.h" />
     <ClInclude Include="Core\Window\Camera\Camera.h" />

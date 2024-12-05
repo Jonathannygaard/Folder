@@ -70,11 +70,11 @@ void MeshSystem::DrawMesh(Entity* entity)
             glBindVertexArray(0);
         }
     }
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        std::cout << "Error: " << std::to_string(error) << '\n';
-    }
+    // GLenum error = glGetError();
+    // if (error != GL_NO_ERROR)
+    // {
+    //     std::cout << "Error: " << std::to_string(error) << '\n';
+    // }
 }
 
 void MeshSystem::BindBuffers(Entity* entity)
