@@ -166,6 +166,7 @@
     <ClCompile Include="Core\Engine.cpp" />
     <ClCompile Include="Core\Entity\Entity.cpp" />
     <ClCompile Include="Core\Lua\Lua.cpp" />
+    <ClCompile Include="Core\ParticleSystem\ParticleSystem.cpp" />
     <ClCompile Include="Core\Shader\Shader.cpp" />
     <ClCompile Include="Core\System\System.cpp" />
     <ClCompile Include="Core\Window\Camera\Camera.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="Core\Engine.h" />
     <ClInclude Include="Core\Entity\Entity.h" />
     <ClInclude Include="Core\Lua\Lua.h" />
+    <ClInclude Include="Core\ParticleSystem\ParticleSystem.h" />
     <ClInclude Include="Core\Shader\Shader.h" />
     <ClInclude Include="Core\System\System.h" />
     <ClInclude Include="Core\Window\Camera\Camera.h" />

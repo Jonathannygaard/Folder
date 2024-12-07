@@ -61,6 +61,10 @@ void Engine::Create()
     xLength = meshSystem.CreateFloorMesh(&entities[1], TerrainResolution, isPointcloud);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[1]).Position =
             glm::vec3(0.f,0.f,0.f);
+
+
+    //Setting up particle system
+    particleSystem.CreateParticle();
 }
 
 void Engine::CreateSphere()
@@ -104,6 +108,7 @@ void Engine::Draw()
         }        
         meshSystem.DrawMesh(&entity);
     }
+    particleSystem.DrawParticles();
 }
 
 void Engine::update()
@@ -136,8 +141,11 @@ void Engine::update()
             trackingsystem.TrackSphere(&s, &meshSystem);        
             tracktimer = 0;
         }
+        particleSystem.Emit(glm::vec3(rand()%100 + 50, rand()%20 + 10, rand()%100 + 50));
     }
     tracktimer += DeltaTime;
+    
+    particleSystem.Update();
     
     Draw();
     MainCamera.OrbitCamera();

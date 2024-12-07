@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Components/Component.h"
 #include "Lua/Lua.h"
+#include "ParticleSystem/ParticleSystem.h"
 #include "System/System.h"
 #include "Window/Camera/Camera.h"
 
@@ -32,6 +33,8 @@ public:
   CollisionSystem collisionSystem;
   CombatSystem combatSystem;
   TrackingSystem trackingsystem;
+
+  ParticleSystem particleSystem;
 
   void Create();
   void CreateSphere();
