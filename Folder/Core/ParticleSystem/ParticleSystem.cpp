@@ -2,6 +2,12 @@
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
+ParticleSystem::ParticleSystem()
+{
+    MaxParticles = 1000;
+    NumParticles = 0;
+}
+
 //Emit new particle
 void ParticleSystem::Emit(glm::vec3 position)
 {

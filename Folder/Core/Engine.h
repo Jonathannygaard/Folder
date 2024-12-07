@@ -13,7 +13,7 @@ public:
   GLFWwindow *Window;
   static inline Camera MainCamera;
   static inline float DeltaTime;
-    Lua lua;
+  Lua lua;
     
   int AmountOfSpheres = 10;
     
@@ -47,5 +47,5 @@ public:
   std::vector<Entity> spheres;
   
   Engine() : meshSystem(componentManager), movementSystem(componentManager),
-                collisionSystem(componentManager), combatSystem(componentManager), trackingsystem(componentManager) {}
+                collisionSystem(componentManager), combatSystem(componentManager), trackingsystem(componentManager){}
 };

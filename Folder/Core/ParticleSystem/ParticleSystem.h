@@ -22,7 +22,7 @@ public:
     int MaxParticles = 1000;
     int NumParticles = 0;
 
-    ParticleSystem() = default;
+    ParticleSystem();
     void Emit(glm::vec3 position);
     void CreateParticle();
     void BindBuffers();
