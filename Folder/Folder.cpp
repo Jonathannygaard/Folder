@@ -4,10 +4,10 @@
 
 int main(int argc, char* argv[])
 {
-    Engine engine;
+    Engine* engine = &Engine::get();
     try
     {
-        engine.run(); 
+        engine->run(); 
     }
     catch(std::exception& e)
     {

@@ -1,8 +1,12 @@
 ﻿#pragma once
 #include <vector>
 #include "../Shader/Shader.h"
-#include "../Engine.h"
 #include "../Color.h"
+
+class ComponentManager;
+class Vertex;
+class Triangles;
+class Entity;
 
 class ParticleSystem
 {
@@ -28,4 +32,5 @@ public:
     void BindBuffers();
     void Update();
     void DrawParticles();
+    void DeleteParticle(int i);
 };

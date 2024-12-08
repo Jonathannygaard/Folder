@@ -64,17 +64,17 @@ void KeyBoardInput::processInput(GLFWwindow* window, std::vector<Entity>& entiti
     }
     if(glfwGetKey(window, GLFW_KEY_SPACE)==GLFW_PRESS)
     {
-        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[2]).Position =
+        componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[3]).Position =
                 componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position;
-        componentManager->GetComponentHandler<MovementComponent>()->GetComponent(&entities[2]).Movement = glm::vec3(glm::normalize(Engine::MainCamera.cameraFront)) * 100.f;
+        componentManager->GetComponentHandler<MovementComponent>()->GetComponent(&entities[3]).Movement = glm::vec3(glm::normalize(Engine::MainCamera.cameraFront)) * 100.f;
 
-        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).SplinePoints.clear();
-        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).controlpoints.clear();
-        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[2]).knots.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[3]).SplinePoints.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[3]).controlpoints.clear();
+        componentManager->GetComponentHandler<TrackingComponent>()->GetComponent(&entities[3]).knots.clear();
     }
     if(glfwGetKey(window, GLFW_KEY_F)==GLFW_PRESS)
     {
-        engine->CreateSphere();
+        engine->CreateSphere(componentManager->GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position);
     }
     if(glfwGetKey(window, GLFW_KEY_O)==GLFW_PRESS)
     {

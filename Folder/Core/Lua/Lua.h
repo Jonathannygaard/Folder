@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 extern "C"
 {
 #include "lua54/include/lua.h"
@@ -11,8 +12,6 @@ class Lua
 public:
     lua_State* L;
     
-   
-
     void setup();
     void runInterpreter();
     void RegisterFunctions();

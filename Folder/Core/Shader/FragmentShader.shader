@@ -7,13 +7,13 @@ in vec3 Normal;
 in vec3 FragPos;
 
 void main(){
-	float AmbStrength = 0.5;
+	float AmbStrength = 1;
 	vec3 LightColor = vec3(1,1,1);
 	vec3 Ambient = LightColor * AmbStrength;
 
 	vec3 Normals = normalize(Normal);
 
-	vec3 LightPos = vec3(0,5,0);
+	vec3 LightPos = vec3(10,10,10);
 	vec3 LightDir = normalize(LightPos - FragPos);
 
 	float Diff = max(dot(Normals, LightDir), 0.0);

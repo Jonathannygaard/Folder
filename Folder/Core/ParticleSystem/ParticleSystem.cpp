@@ -1,10 +1,12 @@
 ﻿#include "ParticleSystem.h"
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
+#include "../Engine.h"
+#include "../Components/Component.h"
 
 ParticleSystem::ParticleSystem()
 {
-    MaxParticles = 1000;
+    MaxParticles = 1000000;
     NumParticles = 0;
 }
 
@@ -16,7 +18,7 @@ void ParticleSystem::Emit(glm::vec3 position)
         Positions.push_back(position);
         Velocities.emplace_back(glm::vec3(0, -2, 0));
         Colors.emplace_back(Color::White);
-        Lifetimes.emplace_back(2.f);
+        Lifetimes.emplace_back(20.f);
         NumParticles++;
     }
 }
@@ -91,17 +93,15 @@ void ParticleSystem::Update()
     {
         Lifetimes[i] -= Engine::DeltaTime;
         Positions[i] += Velocities[i] * Engine::DeltaTime;
-            
+
+        if (Positions[i].y < 1)
+        {
+            Velocities[i] = glm::vec3(0, 0, 0);
+            Positions[i].y = 1;
+        }
         if (Lifetimes[i] <= 0)
         {
-            NumParticles--;
-            if(i != NumParticles)
-            {
-                Positions[i] = Positions[NumParticles];
-                Velocities[i] = Velocities[NumParticles];
-                Colors[i] = Colors[NumParticles];
-                Lifetimes[i] = Lifetimes[NumParticles];
-            }
+         DeleteParticle(i);   
         }
     }
 }
@@ -113,11 +113,21 @@ void ParticleSystem::DrawParticles()
         //Draw particle
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, Positions[i]);
+        model = glm::scale(model, glm::vec3(0.5f));
         glUniformMatrix4fv(glGetUniformLocation(Shader::Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(model));
         glBindVertexArray(VAO);
 
         glDrawElements(GL_TRIANGLES, Indices.size() * 3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
+}
+
+void ParticleSystem::DeleteParticle(int i)
+{
+    NumParticles--;
+    Positions.erase(Positions.begin() + i);
+    Velocities.erase(Velocities.begin() + i);
+    Colors.erase(Colors.begin() + i);
+    Lifetimes.erase(Lifetimes.begin() + i);
 }
 

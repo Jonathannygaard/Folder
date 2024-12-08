@@ -118,6 +118,7 @@ public:
     unsigned int EBO;
     std::vector<Vertex> Vertices;
     std::vector<Triangles> Indices;
+    glm::vec3 Scale = glm::vec3(1);
 
     unsigned int VAO;
 };

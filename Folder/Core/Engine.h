@@ -1,4 +1,4 @@
-﻿#pragma once
+﻿ #pragma once
 #include "Components/Component.h"
 #include "Lua/Lua.h"
 #include "ParticleSystem/ParticleSystem.h"
@@ -9,6 +9,8 @@ struct GLFWwindow;
 
 class Engine
 {
+    inline static Engine* instance = nullptr;
+    
 public:
   GLFWwindow *Window;
   static inline Camera MainCamera;
@@ -20,12 +22,17 @@ public:
   int TerrainResolution = 6;
   int xLength;
 
+  double totaltime = 0;
+
   float tracktimer = 0.f;
   float trackinterval = 0.1f;
 
-    static inline bool isPointcloud = false;
+  float Particletimer = 0;
+  float Particleinterval = 0.05f;
     
-    static inline bool isWireframe = false;
+  static inline bool isPointcloud = false;
+    
+  static inline bool isWireframe = false;
 
   ComponentManager componentManager;
   MeshSystem meshSystem;
@@ -36,8 +43,13 @@ public:
 
   ParticleSystem particleSystem;
 
+    static Engine& get();
+    
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+
   void Create();
-  void CreateSphere();
+  void CreateSphere(glm::vec3 position);
   void setup();
   void update();
   void run();
