@@ -36,7 +36,7 @@ public:
     CollisionSystem(ComponentManager& componentManager) : componentmanager(componentManager) {}
     bool CheckCollision(Entity* entity1, Entity* entity2);
     bool CheckSphereCollision(Entity* entity1, Entity* entity2);
-    void UpdatePosition(Entity* entity);
+    void UpdatePosition(Entity entity);
     void ResolveGroundCollision(Entity* entity, float height, glm::vec3 Normal, float friction, float Bounce);
     void ResolveSphereCollision(Entity* entity1, Entity* entity2);
     bool BarycentricCoordinates(Entity* terrain, Entity* entity, int resolution, int xLength);

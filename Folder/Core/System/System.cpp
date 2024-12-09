@@ -137,6 +137,10 @@ void MeshSystem::BindBuffers(Entity* entity)
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
     }
+    if (!componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
+    {
+        return;
+    }
     if (componentmanager.GetComponentHandler<TrackingComponent>()->HasComponent(entity))
     {
         ComponentHandler<TrackingComponent>* componenthandler = componentmanager.GetComponentHandler<TrackingComponent>();
@@ -531,13 +535,13 @@ bool CollisionSystem::CheckSphereCollision(Entity* entity1, Entity* entity2)
     return false;
 }
 
-void CollisionSystem::UpdatePosition(Entity* entity)
+void CollisionSystem::UpdatePosition(Entity entity)
 {
-    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(entity).min =
-        static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position;
+    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(&entity).min =
+        componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(&entity).Position;
 
-    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(entity).max =
-        static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position
+    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(&entity).max =
+        static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(&entity).Position
             + glm::vec3 (1.f, 1.f, -1.f);
 }
 

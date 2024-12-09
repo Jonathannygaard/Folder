@@ -41,12 +41,14 @@ public:
   CombatSystem combatSystem;
   TrackingSystem trackingsystem;
 
-  ParticleSystem particleSystem;
+  ColorComponent color_component;
 
-    static Engine& get();
+  ParticleSystem particleSystem;
+  
+  static Engine& get();
     
-    Engine(const Engine&) = delete;
-    Engine& operator=(const Engine&) = delete;
+  Engine(const Engine&) = delete;
+  Engine& operator=(const Engine&) = delete;
 
   void Create();
   void CreateSphere(glm::vec3 position);

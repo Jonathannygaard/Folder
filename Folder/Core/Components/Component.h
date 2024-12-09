@@ -47,7 +47,7 @@ public:
         {
             return Components[EntityToIndex[entity->ID]];
         }
-        throw std::runtime_error("Entity does not have this component");
+        throw std::runtime_error("Entity " + std::to_string(entity->ID) + " does not have component " + typeid(T).name());
     }
 
     bool HasComponent(Entity* entity)
@@ -142,4 +142,10 @@ class CombatComponent : public Component
 public:
     int damage;
     float delay;
+};
+
+class ColorComponent : public Component
+{
+public:
+    std::vector <glm::vec3> Colors;
 };

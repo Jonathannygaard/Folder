@@ -11,6 +11,15 @@ int CreateSphere(lua_State* L)
     return 0;
 }
 
+int TrackSpheres(lua_State* L)
+{
+    for (Entity s: Engine::get().spheres)
+    {
+        Engine::get().trackingsystem.TrackSphere(&s, &Engine::get().meshSystem);
+    }
+    return 0;
+}
+
 int GetTotalTime(lua_State* L)
 {
     lua_pushnumber(L, Engine::get().totaltime);
@@ -48,6 +57,7 @@ void Lua::RegisterFunctions()
     lua_register(L, "CreateSphere", CreateSphere);
     lua_register(L, "GetTotalTime", GetTotalTime);
     lua_register(L, "GetDeltatime", GetDeltatime);
+    lua_register(L, "TrackSpheres", TrackSpheres);
 }
 
 void Lua::DoFile()

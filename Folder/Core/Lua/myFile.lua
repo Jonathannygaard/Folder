@@ -1,16 +1,23 @@
 Totaltime = GetTotalTime()
 DeltaTime = GetDeltatime()
 
-print(DeltaTime)
-
-
 if Timer == nil then 
     Timer = 0
 else
     Timer = Timer + DeltaTime
 end
 if Timer >= 5 then
-    CreateSphere(10,10,100)
+    CreateSphere(50,10,100)
     Timer = 0
 end
 
+
+if TrackTimer == nil then
+    TrackTimer = 0
+else
+    TrackTimer = TrackTimer + DeltaTime
+end
+if TrackTimer >= 0.1 then
+    --TrackSpheres()
+    TrackTimer = 0
+end

@@ -1,4 +1,6 @@
 ﻿#include "Engine.h"
+
+#include <dinput.h>
 #include <iostream>
 #include <ostream>
 #include <glad/glad.h>
@@ -28,13 +30,6 @@ void Engine::Create()
 
     //Create floor entity
     entities.emplace_back(entities.size());
-
-    //Creating Sphere entities
-    for (int i = 0; i < AmountOfSpheres; i++)
-    {
-        entities.emplace_back(entities.size());
-        spheres.push_back(entities.back());
-    }
     
     //Making seed random
     srand(time(NULL));
@@ -47,24 +42,14 @@ void Engine::Create()
     componentManager.AddComponent<HealthComponent>(&entities[0]);
     
     //Setting up Sphere Entity
-    for (Entity sphere: spheres)
+    for (int i = 0; i < AmountOfSpheres; i++)
     {
-        componentManager.AddComponent<MeshComponent>(&sphere);
-        componentManager.AddComponent<PositionComponent>(&sphere);
-        componentManager.AddComponent<MovementComponent>(&sphere);
-        componentManager.AddComponent<MassComponent>(&sphere);
-        componentManager.AddComponent<CollisionComponent>(&sphere);
-        componentManager.AddComponent<TrackingComponent>(&sphere);
-        
-        meshSystem.CreateSphereMesh(&sphere, 16, 16, 1.f, Color::Lavender);
-        componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&sphere).Radius = 1.f;
-        componentManager.GetComponentHandler<MassComponent>()->GetComponent(&sphere).Mass = 1.f;
-        componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&sphere).Position =
-             glm::vec3(rand()%100 + 50, rand()%20 + 10, rand()%100 + 50);
+        CreateSphere(glm::vec3(rand()%100 + 50, rand()%20 + 10, rand()%100 + 50));
     }
 
     //Setting up Player entity
-    meshSystem.CreateCubeMesh(&entities[0], Color::Cyan);
+    color_component.Colors.emplace_back(Color::Cyan);
+    meshSystem.CreateCubeMesh(&entities[0], color_component.Colors.back());
     componentManager.GetComponentHandler<HealthComponent>()->GetComponent(&entities[0]).Health = 5;
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[0]).Position = glm::vec3(0,0,0);
     
@@ -80,8 +65,10 @@ void Engine::Create()
     componentManager.AddComponent<PositionComponent>(&entities[2]);
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&entities[2]).Position =
             glm::vec3(-50.f,0.f,-50.f);
-    meshSystem.CreateCubeMesh(&entities[2], Color::Grey);
+    color_component.Colors.emplace_back(Color::Green);
+    meshSystem.CreateCubeMesh(&entities[2], color_component.Colors.back());
     componentManager.GetComponentHandler<MeshComponent>()->GetComponent(&entities[2]).Scale = glm::vec3(100, 1, 100);
+
 
 
     //Setting up particle system
@@ -99,8 +86,9 @@ void Engine::CreateSphere(glm::vec3 position)
     componentManager.AddComponent<MassComponent>(&spheres.back());
     componentManager.AddComponent<CollisionComponent>(&spheres.back());
     componentManager.AddComponent<TrackingComponent>(&spheres.back());
-        
-    meshSystem.CreateSphereMesh(&spheres.back(), 16, 16, 1.f, Color::Lavender);
+    color_component.Colors.emplace_back(Color::Lavender);
+    
+    meshSystem.CreateSphereMesh(&spheres.back(), 16, 16, 1.f, color_component.Colors.back());
     componentManager.GetComponentHandler<CollisionComponent>()->GetComponent(&spheres.back()).Radius = 1.f;
     componentManager.GetComponentHandler<MassComponent>()->GetComponent(&spheres.back()).Mass = 1.f;
     componentManager.GetComponentHandler<PositionComponent>()->GetComponent(&spheres.back()).Position = position;
@@ -135,11 +123,11 @@ void Engine::update()
 {
     lua.DoFile();
     
-    collisionSystem.UpdatePosition(&entities[0]);
+    collisionSystem.UpdatePosition(entities[0]);
     
     for (Entity s: spheres)
     {
-        collisionSystem.UpdatePosition(&s);
+        collisionSystem.UpdatePosition(s);
         for(Entity entity : spheres)
         {
             if(s.ID == entity.ID)
@@ -154,15 +142,15 @@ void Engine::update()
         }
         movementSystem.MoveEntity(&s);
     }
-    if (tracktimer > trackinterval)
-    {
-        for (Entity s: spheres)
-        {
-            trackingsystem.TrackSphere(&s, &meshSystem);        
-            tracktimer = 0;
-        }
-    }
-    tracktimer += DeltaTime;
+    // if (tracktimer > trackinterval)
+    // {
+    //     for (Entity s: spheres)
+    //     {
+    //         trackingsystem.TrackSphere(&s, &meshSystem);
+    //         tracktimer = 0;
+    //     }
+    // }
+    // tracktimer += DeltaTime;
     
     if (Particletimer > Particleinterval)
     {
