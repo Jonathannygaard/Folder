@@ -6,7 +6,7 @@
 
 ParticleSystem::ParticleSystem()
 {
-    MaxParticles = 1000000;
+    MaxParticles = 1000000; //1 million particles
     NumParticles = 0;
 }
 

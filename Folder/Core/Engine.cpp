@@ -142,15 +142,6 @@ void Engine::update()
         }
         movementSystem.MoveEntity(&s);
     }
-    // if (tracktimer > trackinterval)
-    // {
-    //     for (Entity s: spheres)
-    //     {
-    //         trackingsystem.TrackSphere(&s, &meshSystem);
-    //         tracktimer = 0;
-    //     }
-    // }
-    // tracktimer += DeltaTime;
     
     if (Particletimer > Particleinterval)
     {

@@ -537,11 +537,11 @@ bool CollisionSystem::CheckSphereCollision(Entity* entity1, Entity* entity2)
 
 void CollisionSystem::UpdatePosition(Entity entity)
 {
-    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(&entity).min =
+    componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(&entity).min =
         componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(&entity).Position;
 
-    static_cast<ComponentHandler<CollisionComponent>*>(componentmanager.Components[typeid(CollisionComponent)])->GetComponent(&entity).max =
-        static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(&entity).Position
+    componentmanager.GetComponentHandler<CollisionComponent>()->GetComponent(&entity).max =
+     componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(&entity).Position
             + glm::vec3 (1.f, 1.f, -1.f);
 }
 
