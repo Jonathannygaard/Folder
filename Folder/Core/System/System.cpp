@@ -13,15 +13,15 @@
 
 void MovementSystem::MoveEntity(Entity* entity)
 {
-    static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position +=
-        static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Movement * Engine::DeltaTime;
+    componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position +=
+        componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement * Engine::DeltaTime;
 }
 
 void MovementSystem::FindDirection(Entity* entity, Entity* target)
 {
-    static_cast<ComponentHandler<MovementComponent>*>(componentmanager.Components[typeid(MovementComponent)])->GetComponent(entity).Movement =
-        glm::normalize(static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(target).Position -
-            static_cast<ComponentHandler<PositionComponent>*>(componentmanager.Components[typeid(PositionComponent)])->GetComponent(entity).Position);
+    componentmanager.GetComponentHandler<MovementComponent>()->GetComponent(entity).Movement =
+        glm::normalize(componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position -
+            componentmanager.GetComponentHandler<PositionComponent>()->GetComponent(entity).Position);
 }
 
 void MovementSystem::Gravity(Entity* entity)

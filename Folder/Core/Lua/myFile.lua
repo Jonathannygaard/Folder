@@ -6,11 +6,10 @@ if Timer == nil then
 else
     Timer = Timer + DeltaTime
 end
-if Timer >= 5 then
-    CreateSphere(50,10,100)
+if Timer >= 1 then
+    CreateSphere(100,10,100)
     Timer = 0
 end
-
 
 if TrackTimer == nil then
     TrackTimer = 0

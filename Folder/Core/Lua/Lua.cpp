@@ -39,17 +39,8 @@ void Lua::setup()
 
     // load Lua base libraries (print / math / etc)
     luaL_openlibs(L);
-}
 
-void Lua::runInterpreter()
-{
-    char inputBuffer[500];
-    while (true)
-    {
-        printf(">");
-        fgets(inputBuffer, sizeof inputBuffer, stdin);
-        luaL_dostring(L, inputBuffer);
-    }
+    RegisterFunctions();
 }
 
 void Lua::RegisterFunctions()

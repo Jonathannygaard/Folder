@@ -24,7 +24,7 @@ Engine& Engine::get()
 void Engine::Create()
 {    
     //Creating player and enemy entities and adding them to the entities vector
-    entities.emplace_back(0);
+    entities.emplace_back(entities.size());
     //Creating point map
     entities.emplace_back(entities.size());
 
@@ -97,7 +97,6 @@ void Engine::CreateSphere(glm::vec3 position)
 void Engine::setup()
 {
     lua.setup();
-    lua.RegisterFunctions();
     
     Window = Window::init();
     MainCamera.init();
@@ -127,7 +126,7 @@ void Engine::update()
     
     for (Entity s: spheres)
     {
-        collisionSystem.UpdatePosition(s);
+        collisionSystem.UpdatePosition(s); 
         for(Entity entity : spheres)
         {
             if(s.ID == entity.ID)
